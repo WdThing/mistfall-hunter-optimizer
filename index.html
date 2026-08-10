@@ -9,6 +9,7 @@
     body { margin: 0; padding: 24px; background: #17191d; color: #eee; }
     main { max-width: 1280px; margin: auto; }
     h1 { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 0; font-size: 1.5rem; }
+    h1 small { margin-left: auto; color: #aaa; font-size: .6em; font-weight: 400; }
     h1 button { padding: 6px 10px; font-size: .8rem; }
     .help-note { display: none; margin: 10px 0; padding: 8px 10px; background: #24282e; border-left: 3px solid #6d4aff; color: #b9bcc4; font-size: .8rem; line-height: 1.35; }
     body.help-mode .help-note { display: block; }
@@ -34,10 +35,13 @@
     .wine-error { margin-top: 4px; color: #ff9696; font-size: .8rem; font-weight: 600; }
     .affix-heading span:first-child { grid-column: 2 / 3; }
     .affix-heading span:last-child { grid-column: 3 / 4; }
-    .affixes { columns: 3; column-gap: 18px; }
-    .affix { break-inside: avoid; margin: 5px 0; }
+    .affixes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 18px; }
+    .affix { margin: 5px 0; }
     .affix label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .affix.selected label { color: #69db7c; font-weight: 700; }
+    .affix[data-tooltip] { position: relative; }
+    .affix[data-tooltip]::after { content: attr(data-tooltip); position: absolute; z-index: 10; left: 0; top: calc(100% + 6px); width: 280px; padding: 8px; box-sizing: border-box; background: #24282e; border: 1px solid #4b5058; color: #eee; white-space: pre-wrap; opacity: 0; visibility: hidden; pointer-events: none; }
+    .affix[data-tooltip]:hover::after, .affix[data-tooltip]:focus-within::after { opacity: 1; visibility: visible; }
     .affix input[type=number] { width: 54px; }
     .combined { margin: 24px 0; padding-top: 16px; border-top: 1px solid #343940; }
     .combined h3 { margin-top: 0; }
@@ -48,6 +52,7 @@
     button { background: #6d4aff; border-color: #8a70ff; cursor: pointer; padding: 10px 18px; }
     button:disabled { opacity: .6; cursor: wait; }
     .result-actions, dialog form, .saved-result-row { display: flex; align-items: center; gap: 8px; }
+    .result-actions { flex-wrap: wrap; }
     .low-performance-toggle { flex-direction: row; align-items: center; }
     dialog { width: min(520px, calc(100% - 48px)); border: 1px solid #4b5058; border-radius: 8px; background: #1d2025; color: inherit; }
     dialog::backdrop { background: #0009; }
@@ -114,13 +119,13 @@
       .gem-affixes { grid-column: 2; grid-row: 2; width: auto; }
       .affix-headings { grid-template-columns: repeat(2, 1fr); }
       .affix-heading:last-child { display: none; }
-      .affixes { columns: 2; }
+      .affixes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
-<script src="web-adapter.js"></script></head>
-<body>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="8cab2508-a215-4c59-85f9-90004ad58d6e"></script><script src="web-adapter.js"></script></head>
+<body class="help-mode">
 <main>
-  <h1>Mistfall Hunter - Equipment Optimizer <button id="help-toggle" type="button" aria-expanded="false">Help</button></h1>
+  <h1>Mistfall Hunter - Equipment Optimizer <button id="help-toggle" type="button" aria-expanded="true">I know what I'm doing</button> <small>Build 2026-08-10T22:06:32Z of build</small></h1>
   <section class="controls">
     <label data-help="Limits equipment to the selected character class.">Class<select id="class"></select></label>
     <label data-help="Selects the weapon type, if you want to consider both weapons, change the weapon type and execute again.">Weapon<select id="weapon-class"></select></label>
@@ -180,6 +185,9 @@
     <button id="execute">Execute</button>
     <button id="save-result" type="button" disabled>Save Result</button>
     <button id="load-result" type="button">Load Result</button>
+    <button id="export-storage" type="button">Export Storage</button>
+    <button id="import-storage" type="button">Import Storage</button>
+    <input id="import-storage-file" type="file" accept="application/json" hidden>
     <label class="low-performance-toggle"><input id="fill-gem-slots" type="checkbox" checked> Fill Gem Slots</label>
     <label class="low-performance-toggle"><input id="low-performance" type="checkbox"> Low Performance</label>
   </div>
@@ -187,6 +195,8 @@
     <div><strong>Execute:</strong> Starts the search.</div>
     <div><strong>Save Result:</strong> Stores a successful result.</div>
     <div><strong>Load Result:</strong> Opens or deletes saved results.</div>
+    <div><strong>Export Storage:</strong> Downloads the current session and saved results as a JSON file.</div>
+    <div><strong>Import Storage:</strong> Loads a previously exported JSON file.</div>
     <div><strong>Fill Gem Slots:</strong> Fills compatible empty sockets.</div>
     <div><strong>Low Performance:</strong> Execute in single-worker mode. This uses less CPU but takes longer.</div>
   </div>
@@ -229,6 +239,7 @@
     const open = document.body.classList.toggle("help-mode");
     helpToggle.textContent = open ? "I know what I'm doing" : "Help";
     helpToggle.setAttribute("aria-expanded", String(open));
+    saveSession();
   };
   const fullSetAffixSlots = { Gray: 0, White: 0, Green: 8, Blue: 16, Purple: 24, Yellow: 32 };
   const rarityLabel = rarity => fullSetAffixSlots[rarity] == null ? rarity : `${rarity} (${fullSetAffixSlots[rarity]})`;
@@ -236,9 +247,10 @@
   const options = await GUIService.GetOptions();
   addOptions($("class"), options.classes);
   const updateWeapons = selected => {
+    const weapons = options.weaponClasses[$("class").value] || [];
     $("weapon-class").replaceChildren();
-    addOptions($("weapon-class"), options.weaponClasses[$("class").value] || []);
-    if (selected) $("weapon-class").value = selected;
+    addOptions($("weapon-class"), weapons);
+    $("weapon-class").value = weapons.includes(selected) ? selected : weapons[0] || "";
   };
   $("class").onchange = () => updateWeapons();
   updateWeapons();
@@ -283,7 +295,7 @@
     const details = options.affixDetails[name];
     const row = document.createElement("div");
     row.className = "affix";
-    row.title = [details.description, "", ...Object.entries(details.levels).map(([level, bonus]) => `Level ${level}: ${bonus}`)].join("\n");
+    row.dataset.tooltip = [details.description, "", ...Object.entries(details.levels).map(([level, bonus]) => `Level ${level}: ${bonus}`)].join("\n");
     const label = document.createElement("label");
     label.textContent = name;
     const equipment = document.createElement("input");
@@ -308,7 +320,13 @@
     $("affixes").append(row);
   }
 
-  function applySession(session) {
+  function applySession(session, restoreHelp = true) {
+    if (restoreHelp) {
+      const open = session.help ?? true;
+      document.body.classList.toggle("help-mode", open);
+      helpToggle.textContent = open ? "I know what I'm doing" : "Help";
+      helpToggle.setAttribute("aria-expanded", String(open));
+    }
     if (session.request) {
       const request = session.request;
       if (request.characterClass) {
@@ -449,6 +467,61 @@
     };
   };
 
+  async function exportStorage() {
+    const [session, savedResults] = await Promise.all([GUIService.LoadSession(), GUIService.ListResults()]);
+    const results = await Promise.all(savedResults.map(async result => ({
+      name: result.name,
+      createdAt: result.createdAt,
+      session: await GUIService.LoadResult(result.name)
+    })));
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(new Blob([JSON.stringify({ version: 1, session, results }, null, 2)], { type: "application/json" }));
+    link.href = url;
+    link.download = "mistfall-hunter-storage.json";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  function validateStorage(data) {
+    if (data?.version !== 1 || !data.session || !Array.isArray(data.results)) throw new Error("Invalid storage file.");
+    const names = new Set();
+    for (const result of data.results) {
+      if (!result || typeof result.name !== "string" || names.has(result.name) || !result.session?.result?.possible) throw new Error("Invalid saved result in storage file.");
+      names.add(result.name);
+    }
+  }
+
+  $("export-storage").onclick = async () => {
+    try {
+      await exportStorage();
+    } catch (error) {
+      $("output").textContent = String(error);
+    }
+  };
+  $("import-storage").onclick = () => {
+    $("import-storage-file").value = "";
+    $("import-storage-file").click();
+  };
+  $("import-storage-file").onchange = async event => {
+    const [file] = event.target.files;
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      validateStorage(data);
+      const existing = new Set((await GUIService.ListResults()).map(result => result.name));
+      if (!confirm("Import storage and replace the current session and matching saved results?")) return;
+      for (const result of data.results) {
+        if (existing.has(result.name)) await GUIService.DeleteResult(result.name);
+        await GUIService.SaveResult(result.name, { ...result.session, hasResult: true });
+      }
+      await GUIService.SaveSession(data.session);
+      applySession(data.session);
+      $("output").textContent = `Imported ${data.results.length} saved result${data.results.length === 1 ? "" : "s"}.`;
+    } catch (error) {
+      $("output").textContent = String(error);
+    }
+  };
+
   updateCombined();
 
   async function refreshSavedResults() {
@@ -468,7 +541,7 @@
         try {
           const session = await GUIService.LoadResult(result.name);
           const hadResult = session.hasResult || session.result?.possible;
-          applySession(session);
+          applySession(session, false);
           if (!hadResult) {
             $("output").className = "error";
             $("output").textContent = "Saved result was loaded without its old build. Configuration and affixes are restored; press Execute to optimize again.";
@@ -497,7 +570,7 @@
 
   let saving = Promise.resolve();
   const saveSession = () => saving = saving.then(() =>
-    GUIService.SaveSession({ request: collectRequest(), result: lastResult || {}, hasResult: !!lastResult })
+    GUIService.SaveSession({ request: collectRequest(), result: lastResult || {}, hasResult: !!lastResult, help: document.body.classList.contains("help-mode") })
   ).catch(() => {});
   $("reset-affixes").onclick = () => {
     if (!confirm("Reset all affix and wine levels?")) return;
