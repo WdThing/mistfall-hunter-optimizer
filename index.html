@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mistfall Hunter - Equipment Optimizer</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
+    body { margin: 0; padding: 24px; background: #17191d; color: #eee; }
+    main { max-width: 1280px; margin: auto; }
+    h1 { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 0; font-size: 1.5rem; }
+    h1 button { padding: 6px 10px; font-size: .8rem; }
+    .help-note { display: none; margin: 10px 0; padding: 8px 10px; background: #24282e; border-left: 3px solid #6d4aff; color: #b9bcc4; font-size: .8rem; line-height: 1.35; }
+    body.help-mode .help-note { display: block; }
+    body.help-mode [data-help]::after { display: block; margin-top: 8px; padding: 8px 10px; background: #24282e; border-left: 3px solid #6d4aff; color: #b9bcc4; content: attr(data-help); font-size: .8rem; font-weight: 400; line-height: 1.35; }
+    .controls { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 20px; }
+    label { display: flex; flex-direction: column; gap: 5px; font-size: .9rem; }
+    .rarity-range { grid-column: span 2; }
+    .rarity-range span { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+    .rarity-range select { min-width: 0; width: 100%; }
+    .accessory { min-width: 0; margin: 0; padding: 0; border: 0; }
+    .accessory legend { margin-bottom: 5px; padding: 0; font-size: .9rem; }
+    .accessory div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    select, input, button { box-sizing: border-box; border: 1px solid #4b5058; border-radius: 5px; background: #24282e; color: inherit; padding: 8px; font: inherit; }
+    select { height: 46px; }
+    .affix-headings { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 18px; }
+    .affix-heading, .affix { display: grid; grid-template-columns: minmax(0, 1fr) 54px 54px; align-items: center; gap: 6px; }
+    .affix-heading { color: #aaa; font-size: .8rem; text-align: center; }
+    .affix-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0 18px; }
+    .affix-summary-card { min-width: 0; padding: 12px 14px; background: #24282e; border: 1px solid #343940; border-radius: 8px; }
+    .affix-summary-label { color: #aaa; font-size: .8rem; }
+    .affix-summary-value { margin-top: 4px; font-size: 1.05rem; font-weight: 700; }
+    .affix-observation.impossible { color: #ff9696; }
+    .wine-error { margin-top: 4px; color: #ff9696; font-size: .8rem; font-weight: 600; }
+    .affix-heading span:first-child { grid-column: 2 / 3; }
+    .affix-heading span:last-child { grid-column: 3 / 4; }
+    .affixes { columns: 3; column-gap: 18px; }
+    .affix { break-inside: avoid; margin: 5px 0; }
+    .affix label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .affix.selected label { color: #69db7c; font-weight: 700; }
+    .affix input[type=number] { width: 54px; }
+    .combined { margin: 24px 0; padding-top: 16px; border-top: 1px solid #343940; }
+    .combined h3 { margin-top: 0; }
+    .combined-entry { margin: 10px 0; }
+    .combined-effect { margin-top: 2px; color: #aaa; font-size: .9rem; }
+    .threshold { color: #69db7c; font-weight: 700; }
+    .wasteful { color: #ff6b6b; font-weight: 700; }
+    button { background: #6d4aff; border-color: #8a70ff; cursor: pointer; padding: 10px 18px; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .result-actions, dialog form, .saved-result-row { display: flex; align-items: center; gap: 8px; }
+    .low-performance-toggle { flex-direction: row; align-items: center; }
+    dialog { width: min(520px, calc(100% - 48px)); border: 1px solid #4b5058; border-radius: 8px; background: #1d2025; color: inherit; }
+    dialog::backdrop { background: #0009; }
+    .saved-result-list { max-height: 360px; overflow-y: auto; }
+    .saved-result-row { justify-content: space-between; margin: 8px 0; }
+    .saved-result-row > button:first-child { flex: 1; text-align: left; }
+    .saved-result-row small { display: block; color: #aaa; }
+    #output { min-height: 260px; margin-top: 18px; padding: 16px; overflow: auto; background: #0e1012; border: 1px solid #343940; border-radius: 6px; }
+    .build-title { margin-bottom: 10px; font-size: 1.05rem; font-weight: 700; }
+    .build-title.valid { color: #69db7c; }
+    .build-title.invalid, .recommendation { color: #ff9696; }
+    .recommendation { margin-bottom: 10px; font-weight: 600; }
+    .build-summary { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); gap: 4px 32px; margin-bottom: 18px; }
+    .affix-results { width: auto; min-width: 430px; margin-bottom: 18px; }
+    .affix-results .equal { color: #eee; }
+    .affix-results .higher { color: #69db7c; }
+    .affix-results .lower { color: #ff9696; font-weight: 700; }
+    .affix-results .bonus { color: #ffd43b; }
+    .affix-results .threshold-check { color: #69db7c; font-weight: 700; }
+    .affix-results .threshold-miss { color: #ff9696; font-weight: 700; }
+    .search-footer, .rules-footer, .gem-empty { color: #8d929b; }
+    .search-footer { margin-top: 12px; font-size: .85rem; }
+    .result-divider { margin: 16px 0 8px; border: 0; border-top: 1px solid #343940; }
+    .rules-footer { margin-top: 8px; font-size: .85rem; }
+    .rules-footer h4, .rules-footer h5 { margin: 8px 0 2px; color: #b9bcc4; }
+    .rules-footer h4 { font-size: .95rem; }
+    .rules-footer h5 { font-size: .85rem; }
+    .rules-footer ul { margin: 2px 0 0; padding-left: 20px; }
+    .native-affixes { color: #b9e6c5; }
+    .gem { display: grid; grid-template-columns: 28px 190px minmax(0, 1fr); gap: 8px; }
+    .gem + .gem { margin-top: 5px; padding-top: 5px; border-top: 1px solid #343940; }
+    .gem-color { display: inline-flex; align-items: center; gap: 6px; }
+    .gem-color::before { width: 10px; height: 10px; flex: none; border: 1px solid #ffffff55; border-radius: 50%; background: #adb5bd; content: ""; }
+    .gem-color[data-color="Blue"]::before { background: #4dabf7; }
+    .gem-color[data-color="Pink"]::before { background: #f783ac; }
+    .gem-color[data-color="Red"]::before { background: #ff6b6b; }
+    .gem-color[data-color="White"]::before { background: #f1f3f5; }
+    .gem-color.split::before { background: linear-gradient(90deg, #f1f3f5 50%, var(--gem-color) 50%); }
+    .gem-affixes { box-sizing: border-box; min-width: 0; padding: 0 4px; overflow: hidden; color: #b9c7e8; text-overflow: ellipsis; white-space: nowrap; }
+    .gem-name { min-width: 0; }
+    .gem-filled .gem-name { color: #ffd43b; font-weight: 600; }
+    .rarity-color { display: inline-flex; align-items: center; gap: 6px; }
+    .rarity-color::before { width: 10px; height: 10px; flex: none; border: 1px solid #ffffff55; border-radius: 50%; background: #adb5bd; content: ""; }
+    .rarity-color[data-color="White"]::before { background: #f1f3f5; }
+    .rarity-color[data-color="Green"]::before { background: #69db7c; }
+    .rarity-color[data-color="Blue"]::before { background: #4dabf7; }
+    .rarity-color[data-color="Purple"]::before { background: #9c36b5; }
+    .rarity-color[data-color="Yellow"]::before { background: #ffd43b; }
+    .rarity-column { width: 1%; white-space: nowrap; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 7px 9px; border: 1px solid #343940; text-align: left; vertical-align: top; }
+    th { background: #24282e; }
+    tbody tr:nth-child(even) { background: #1b1e23; }
+    .error { color: #ff9696; white-space: pre-wrap; }
+    @media (max-width: 1100px) {
+      .controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .affix-summary { grid-template-columns: 1fr 1fr; }
+      .affix-summary-card:last-child { grid-column: 1 / -1; }
+      .build-summary { grid-template-columns: 1fr; }
+      .gem { grid-template-columns: 28px minmax(0, 1fr); }
+      .gem-affixes { grid-column: 2; grid-row: 2; width: auto; }
+      .affix-headings { grid-template-columns: repeat(2, 1fr); }
+      .affix-heading:last-child { display: none; }
+      .affixes { columns: 2; }
+    }
+  </style>
+<script src="web-adapter.js"></script></head>
+<body>
+<main>
+  <h1>Mistfall Hunter - Equipment Optimizer <button id="help-toggle" type="button" aria-expanded="false">Help</button></h1>
+  <section class="controls">
+    <label data-help="Limits equipment to the selected character class.">Class<select id="class"></select></label>
+    <label data-help="Selects the weapon type, if you want to consider both weapons, change the weapon type and execute again.">Weapon<select id="weapon-class"></select></label>
+    <label class="rarity-range" data-help="Sets the minimum and maximum rarity for all equipment. The value in parenthesis is the total number of affix levels if the entire equipment has that rarity">Rarity
+      <span>
+        <select id="min-rarity" aria-label="Rarity from"></select>
+        to
+        <select id="max-rarity" aria-label="Rarity to"></select>
+      </span>
+    </label>
+    <label data-help="Fixes the weapon rarity, or keep it at any so it is selected automatically.">Weapon Rarity<select id="weapon-rarity"></select></label>
+    <fieldset class="accessory" data-help="Filter rings by primary attribute (Attack or Health) and damage type (Physical or Magical).">
+      <legend>Ring</legend>
+      <div>
+        <select id="ring-primary" aria-label="Ring HP or ATK"></select>
+        <select id="ring-damage" aria-label="Ring physical or magical"></select>
+      </div>
+    </fieldset>
+    <fieldset class="accessory" data-help="Filter amulets by primary attribute (Attack or Health) and damage type (Physical or Magical).">
+      <legend>Amulet</legend>
+      <div>
+        <select id="amulet-primary" aria-label="Amulet HP or ATK"></select>
+        <select id="amulet-damage" aria-label="Amulet physical or magical"></select>
+      </div>
+    </fieldset>
+  </section>
+  <div class="help-note">Choose the filters first. Set the affix levels that you need, then press Execute.</div>
+  <h2>Affixes <button id="reset-affixes" type="button">Reset</button></h2>
+  <div class="affix-summary" aria-live="polite">
+    <div class="affix-summary-card">
+      <div class="affix-summary-label">Equipment Levels</div>
+      <div id="equipment-level-total" class="affix-summary-value">0</div>
+    </div>
+    <div class="affix-summary-card">
+      <div class="affix-summary-label">Wine Levels</div>
+      <div id="wine-level-total" class="affix-summary-value">0/8</div>
+      <div id="wine-error" class="wine-error" aria-live="polite"></div>
+    </div>
+    <div class="affix-summary-card">
+      <div class="affix-summary-label">Recommendation</div>
+      <div id="affix-observation" class="affix-summary-value" aria-live="polite">Gray/White + Green</div>
+    </div>
+  </div>
+  <div class="help-note">Enter equipment and wine levels. The summary cards show the sum of each column. Wine has a maximum total of 8. The recommendation shows the required rarity range.</div>
+  <div class="affix-headings" aria-hidden="true">
+    <div class="affix-heading"><span>Equip.</span><span>Wine</span></div>
+    <div class="affix-heading"><span>Equip.</span><span>Wine</span></div>
+    <div class="affix-heading"><span>Equip.</span><span>Wine</span></div>
+  </div>
+  <div id="affixes" class="affixes"></div>
+  <section class="combined">
+    <h3>Combined affixes</h3>
+    <div id="combined-affixes">No affixes selected.</div>
+    <div class="help-note">This section combines equipment and wine levels and shows the current effect text.</div>
+  </section>
+  <div class="result-actions">
+    <button id="execute">Execute</button>
+    <button id="save-result" type="button" disabled>Save Result</button>
+    <button id="load-result" type="button">Load Result</button>
+    <label class="low-performance-toggle"><input id="fill-gem-slots" type="checkbox" checked> Fill Gem Slots</label>
+    <label class="low-performance-toggle"><input id="low-performance" type="checkbox"> Low Performance</label>
+  </div>
+  <div class="help-note">
+    <div><strong>Execute:</strong> Starts the search.</div>
+    <div><strong>Save Result:</strong> Stores a successful result.</div>
+    <div><strong>Load Result:</strong> Opens or deletes saved results.</div>
+    <div><strong>Fill Gem Slots:</strong> Fills compatible empty sockets.</div>
+    <div><strong>Low Performance:</strong> Execute in single-worker mode. This uses less CPU but takes longer.</div>
+  </div>
+  <div id="output">Select affixes and press Execute.</div>
+  <div class="help-note">The output shows validity, prices, affix totals, equipment, gems, search time, and optimization rules.</div>
+</main>
+<dialog id="save-dialog">
+  <h3>Save result</h3>
+  <form id="save-form">
+    <input id="result-name" required placeholder="Unique name" aria-label="Result name" autofocus>
+    <button type="submit">Save</button>
+    <button type="button" onclick="this.closest('dialog').close()">Cancel</button>
+  </form>
+  <div id="save-status" class="error"></div>
+</dialog>
+<dialog id="load-dialog">
+  <h3>Load result</h3>
+  <div id="saved-results" class="saved-result-list"></div>
+  <button type="button" onclick="this.closest('dialog').close()">Close</button>
+</dialog>
+<script type="module">
+  const Events = window.mistfallWeb
+    ? window.MistfallWeb.Events
+    : (await import("/wails/runtime.js")).Events;
+  const GUIService = window.mistfallWeb
+    ? window.MistfallWeb.GUIService
+    : (await import("./bindings/mistfall/v2/index.js")).GUIService;
+
+  const $ = id => document.getElementById(id);
+  const addOptions = (select, values, label = value => value) => {
+    for (const value of values) {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label(value);
+      select.append(option);
+    }
+  };
+  const helpToggle = $("help-toggle");
+  helpToggle.onclick = () => {
+    const open = document.body.classList.toggle("help-mode");
+    helpToggle.textContent = open ? "I know what I'm doing" : "Help";
+    helpToggle.setAttribute("aria-expanded", String(open));
+  };
+  const fullSetAffixSlots = { Gray: 0, White: 0, Green: 8, Blue: 16, Purple: 24, Yellow: 32 };
+  const rarityLabel = rarity => fullSetAffixSlots[rarity] == null ? rarity : `${rarity} (${fullSetAffixSlots[rarity]})`;
+
+  const options = await GUIService.GetOptions();
+  addOptions($("class"), options.classes);
+  const updateWeapons = selected => {
+    $("weapon-class").replaceChildren();
+    addOptions($("weapon-class"), options.weaponClasses[$("class").value] || []);
+    if (selected) $("weapon-class").value = selected;
+  };
+  $("class").onchange = () => updateWeapons();
+  updateWeapons();
+  addOptions($("min-rarity"), options.rarities, rarityLabel);
+  addOptions($("max-rarity"), options.rarities, rarityLabel);
+  for (const accessory of ["ring", "amulet"]) {
+    addOptions($(`${accessory}-primary`), ["Any", "HP", "ATK"]);
+    addOptions($(`${accessory}-damage`), ["Any", "PHYS", "MAG"]);
+  }
+  $("min-rarity").value = options.rarities[0];
+  $("max-rarity").value = options.rarities.at(-1);
+  const updateWeaponRarities = selected => {
+    const from = options.rarities.indexOf($("min-rarity").value);
+    const to = options.rarities.indexOf($("max-rarity").value);
+    const rarities = options.rarities.slice(from, to + 1);
+    $("weapon-rarity").replaceChildren();
+    addOptions($("weapon-rarity"), ["Any", ...rarities], rarityLabel);
+    $("weapon-rarity").value = rarities.includes(selected) ? selected : "Any";
+  };
+  $("min-rarity").onchange = () => {
+    if (options.rarities.indexOf($("min-rarity").value) > options.rarities.indexOf($("max-rarity").value)) $("max-rarity").value = $("min-rarity").value;
+    updateWeaponRarities($("weapon-rarity").value);
+    updateCombined();
+  };
+  $("max-rarity").onchange = () => {
+    if (options.rarities.indexOf($("max-rarity").value) < options.rarities.indexOf($("min-rarity").value)) $("min-rarity").value = $("max-rarity").value;
+    updateWeaponRarities($("weapon-rarity").value);
+    updateCombined();
+  };
+  updateWeaponRarities();
+
+  let lastResult = null;
+  let optimizing = false;
+
+  Events.On("optimization-progress", event => {
+    if (!optimizing) return;
+    const { stage, current, total, tested } = event.data;
+    $("output").textContent = `Optimizing — ${stage} (${current}/${total} slots) — ${Number(tested).toLocaleString()} combinations tested`;
+  });
+
+  for (const name of options.affixes) {
+    const details = options.affixDetails[name];
+    const row = document.createElement("div");
+    row.className = "affix";
+    row.title = [details.description, "", ...Object.entries(details.levels).map(([level, bonus]) => `Level ${level}: ${bonus}`)].join("\n");
+    const label = document.createElement("label");
+    label.textContent = name;
+    const equipment = document.createElement("input");
+    equipment.type = "number";
+    equipment.min = "0";
+    equipment.max = String(Math.max(...Object.keys(details.levels).map(Number)));
+    equipment.dataset.maxLevel = equipment.max;
+    equipment.value = "0";
+    equipment.dataset.kind = "equipment";
+    equipment.ariaLabel = `${name} equipment level`;
+    const wine = document.createElement("input");
+    wine.type = "number";
+    wine.min = "0";
+    wine.max = "2";
+    wine.value = "0";
+    wine.dataset.kind = "wine";
+    wine.ariaLabel = `${name} wine level`;
+    equipment.oninput = updateCombined;
+    wine.oninput = updateCombined;
+    row.append(label, equipment, wine);
+    row.dataset.name = name;
+    $("affixes").append(row);
+  }
+
+  function applySession(session) {
+    if (session.request) {
+      const request = session.request;
+      if (request.characterClass) {
+        $("class").value = request.characterClass;
+        updateWeapons(request.weaponClass);
+      }
+      if (request.minRarity) $("min-rarity").value = request.minRarity;
+      if (request.maxRarity) $("max-rarity").value = request.maxRarity;
+      updateWeaponRarities(request.weaponRarity);
+      $("fill-gem-slots").checked = request.fillGemSlots !== false;
+      $("low-performance").checked = !!request.lowPerformance;
+      for (const accessory of ["ring", "amulet"]) {
+        const value = request[accessory] || "Any";
+        const parts = value === "Any" ? [] : value.split("/");
+        $(`${accessory}-primary`).value = parts[0] || "Any";
+        $(`${accessory}-damage`).value = parts[1] || "Any";
+      }
+      const savedAffixes = new Map((request.affixes || []).map(affix => [affix.name, affix]));
+      for (const row of document.querySelectorAll(".affix")) {
+        const affix = savedAffixes.get(row.dataset.name);
+        const equipment = row.querySelector('[data-kind="equipment"]');
+        const wine = row.querySelector('[data-kind="wine"]');
+        equipment.value = String(affix && affix.enabled !== false ? affix.level || 0 : 0);
+        wine.value = String(affix?.wine || 0);
+      }
+      lastResult = null;
+      const savedResult = session.hasResult || session.result?.possible ? session.result : null;
+      if (savedResult) {
+        try {
+          render(savedResult);
+          lastResult = savedResult;
+        } catch (error) {
+          $("output").className = "error";
+          $("output").textContent = `Saved result is incompatible: ${error}. Configuration and affixes loaded; press Execute to optimize again.`;
+        }
+      }
+      $("save-result").disabled = !lastResult?.possible;
+      updateCombined();
+    }
+  }
+
+  try {
+    applySession(await GUIService.LoadSession());
+  } catch (error) {
+    $("output").textContent = `Could not load saved session: ${error}`;
+  }
+
+  function affixValues() {
+    return [...document.querySelectorAll(".affix")].map(row => {
+      const level = Number(row.querySelector('[data-kind="equipment"]').value);
+      const wine = Number(row.querySelector('[data-kind="wine"]').value);
+      row.classList.toggle("selected", level + wine > 0);
+      return {
+        name: row.dataset.name,
+        enabled: level > 0,
+        level,
+        wine
+      };
+    });
+  }
+
+  function updateCombined() {
+    const combined = $("combined-affixes");
+    const affixes = affixValues();
+    const equipmentTotal = affixes.reduce((total, affix) => total + affix.level, 0);
+    const wineTotal = affixes.reduce((total, affix) => total + affix.wine, 0);
+    $("equipment-level-total").textContent = equipmentTotal;
+    $("wine-level-total").textContent = wineTotal + "/8";
+    const recommendation = equipmentTotal > 32 ? "Impossible" : equipmentTotal === 32 ? "Yellow" : equipmentTotal > 24 ? "Purple + Yellow" : equipmentTotal === 24 ? "Purple" : equipmentTotal > 16 ? "Blue + Purple" : equipmentTotal === 16 ? "Blue" : equipmentTotal > 8 ? "Green + Blue" : equipmentTotal === 8 ? "Green" : "Gray/White + Green";
+    const requiredRarity = equipmentTotal > 32 ? null : equipmentTotal > 24 ? "Yellow" : equipmentTotal > 16 ? "Purple" : equipmentTotal > 8 ? "Blue" : "Green";
+    const impossible = !requiredRarity || options.rarities.indexOf(requiredRarity) > options.rarities.indexOf($("max-rarity").value);
+    const impossibleMessage = equipmentTotal > 32 ? "Impossible with highest rarity, reduce number of affixes" : "Impossible with maximum rarity, increase rarity or reduce number of equipment affixes";
+    const observation = $("affix-observation");
+    observation.textContent = impossible ? impossibleMessage : recommendation;
+    observation.className = "affix-summary-value affix-observation" + (impossible ? " impossible" : "");
+    $("wine-error").textContent = wineTotal > 8 ? "Wine limit exceeded. Reduce wine levels." : "";
+    const equipmentLimit = fullSetAffixSlots[$("max-rarity").value] ?? 0;
+    const equipmentRemaining = Math.max(0, equipmentLimit - equipmentTotal);
+    const wineRemaining = Math.max(0, 8 - wineTotal);
+    for (const row of document.querySelectorAll(".affix")) {
+      const equipment = row.querySelector('[data-kind="equipment"]');
+      const wine = row.querySelector('[data-kind="wine"]');
+      const equipmentLevel = Number(equipment.value);
+      const wineLevel = Number(wine.value);
+      equipment.max = String(Math.min(Number(equipment.dataset.maxLevel), equipmentLevel + equipmentRemaining));
+      wine.max = String(Math.min(2, wineLevel + wineRemaining));
+    }
+    combined.replaceChildren();
+    for (const affix of affixes) {
+      if (!affix.enabled && !affix.wine) continue;
+      const details = options.affixDetails[affix.name];
+      const maxLevel = Math.max(...Object.keys(details.levels).map(Number));
+      const level = (affix.enabled ? affix.level : 0) + affix.wine;
+      const threshold = thresholdFor(details);
+      const item = document.createElement("div");
+      item.className = "combined-entry";
+      const heading = document.createElement("div");
+      heading.textContent = `${affix.name}: ${level}/${maxLevel}`;
+      if (level > maxLevel) {
+        heading.className = "wasteful";
+      }
+      else if (threshold && level >= Number(threshold)) heading.className = "threshold";
+      const effect = document.createElement("div");
+      effect.className = "combined-effect";
+      effect.textContent = details.levels[String(Math.min(level, maxLevel))];
+      item.append(heading, effect);
+      combined.append(item);
+    }
+    if (!combined.children.length) combined.textContent = "No affixes selected.";
+    $("execute").disabled = wineTotal > 8 || impossible;
+  }
+
+  function effectCount(text) { return text.split(/[.,](?=\s|$)/).filter(Boolean).length; }
+  function thresholdFor(details) {
+    if (!details?.levels) return null;
+    const baseEffects = effectCount(details.levels["1"] || "");
+    return Object.entries(details.levels)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .find(([, text]) => effectCount(text) > baseEffects)?.[0] || null;
+  }
+
+  const collectRequest = () => {
+    const affixes = affixValues();
+    const wineTotal = affixes.reduce((total, affix) => total + affix.wine, 0);
+    if (affixes.some(affix => affix.wine < 0 || affix.wine > 2)) throw new Error("Wine levels must be between 0 and 2.");
+    if (wineTotal > 8) throw new Error("Total wine levels cannot exceed 8.");
+    return {
+      characterClass: $("class").value,
+      weaponClass: $("weapon-class").value,
+      weaponRarity: $("weapon-rarity").value,
+      minRarity: $("min-rarity").value,
+      maxRarity: $("max-rarity").value,
+      ring: `${$("ring-primary").value}/${$("ring-damage").value}`,
+      amulet: `${$("amulet-primary").value}/${$("amulet-damage").value}`,
+      affixes,
+      fillGemSlots: $("fill-gem-slots").checked,
+      lowPerformance: $("low-performance").checked
+    };
+  };
+
+  updateCombined();
+
+  async function refreshSavedResults() {
+    const saved = $("saved-results");
+    saved.replaceChildren();
+    const results = await GUIService.ListResults();
+    if (!results.length) saved.textContent = "No saved results.";
+    for (const result of results) {
+      const row = document.createElement("div");
+      row.className = "saved-result-row";
+      const load = document.createElement("button");
+      load.textContent = result.name;
+      const created = document.createElement("small");
+      created.textContent = new Date(result.createdAt).toLocaleString();
+      load.append(created);
+      load.onclick = async () => {
+        try {
+          const session = await GUIService.LoadResult(result.name);
+          const hadResult = session.hasResult || session.result?.possible;
+          applySession(session);
+          if (!hadResult) {
+            $("output").className = "error";
+            $("output").textContent = "Saved result was loaded without its old build. Configuration and affixes are restored; press Execute to optimize again.";
+          }
+          $("load-dialog").close();
+          await saveSession();
+        } catch (error) {
+          $("output").textContent = String(error);
+        }
+      };
+      const remove = document.createElement("button");
+      remove.textContent = "Delete";
+      remove.onclick = async () => {
+        if (!confirm(`Delete saved result "${result.name}"?`)) return;
+        try {
+          await GUIService.DeleteResult(result.name);
+          await refreshSavedResults();
+        } catch (error) {
+          $("output").textContent = String(error);
+        }
+      };
+      row.append(load, remove);
+      saved.append(row);
+    }
+  }
+
+  let saving = Promise.resolve();
+  const saveSession = () => saving = saving.then(() =>
+    GUIService.SaveSession({ request: collectRequest(), result: lastResult || {}, hasResult: !!lastResult })
+  ).catch(() => {});
+  $("reset-affixes").onclick = () => {
+    if (!confirm("Reset all affix and wine levels?")) return;
+    document.querySelectorAll(".affix input").forEach(input => input.value = "0");
+    updateCombined();
+    saveSession();
+  };
+  document.addEventListener("change", saveSession);
+
+  $("save-result").onclick = () => {
+    $("save-status").textContent = "";
+    $("save-dialog").showModal();
+  };
+  $("load-result").onclick = async () => {
+    try {
+      await refreshSavedResults();
+      $("load-dialog").showModal();
+    } catch (error) {
+      $("output").textContent = String(error);
+    }
+  };
+  $("save-form").onsubmit = async event => {
+    event.preventDefault();
+    try {
+      await GUIService.SaveResult($("result-name").value, { request: collectRequest(), result: lastResult, hasResult: true });
+      $("result-name").value = "";
+      $("save-dialog").close();
+    } catch (error) {
+      $("save-status").textContent = String(error);
+    }
+  };
+
+  $("execute").onclick = async () => {
+    const button = $("execute");
+    button.disabled = true;
+    optimizing = true;
+    $("output").textContent = "Optimizing...";
+    try {
+      const request = collectRequest();
+      lastResult = await GUIService.Execute(request);
+      optimizing = false;
+      render(lastResult);
+      $("save-result").disabled = !lastResult.possible;
+      await saveSession();
+    } catch (error) {
+      $("output").textContent = String(error);
+    } finally {
+      optimizing = false;
+      button.disabled = false;
+    }
+  };
+
+  function appendRules(output, rules = []) {
+    if (!rules?.length) return;
+    const footer = document.createElement("div");
+    footer.className = "rules-footer";
+    const run = rules.filter(rule => rule.startsWith("Optimization mode:") || rule.startsWith("Wine reference:"));
+    const soft = rules.filter(rule => rule.startsWith("Optimization:") || rule.startsWith("Fill Gem Slots: globally") || rule.startsWith("Fill Gem Slots fallback:") || rule.startsWith("Fallback:"));
+    const hard = rules.filter(rule => !run.includes(rule) && !soft.includes(rule));
+    const section = (title, entries, tag = "h4") => {
+      if (!entries.length) return;
+      const heading = document.createElement(tag);
+      heading.textContent = title;
+      footer.append(heading);
+      const list = document.createElement("ul");
+      for (const rule of entries) {
+        const item = document.createElement("li");
+        item.textContent = rule;
+        list.append(item);
+      }
+      footer.append(list);
+    };
+    section("Run configuration:", run.map(rule => rule.replace(/^Optimization mode:\s*/, "")));
+    if (hard.length || soft.length) {
+      const heading = document.createElement("h4");
+      heading.textContent = "Optimization constraints:";
+      footer.append(heading);
+      section("Hard:", hard, "h5");
+      section("Soft:", soft, "h5");
+    }
+    output.append(footer);
+  }
+
+  function render(result) {
+    const output = $("output");
+    output.replaceChildren();
+    output.className = result.possible ? "" : "error";
+    const status = document.createElement("div");
+    const invalid = !result.possible || result.closest;
+    status.className = `build-title ${invalid ? "invalid" : "valid"}`;
+    status.textContent = invalid ? "INVALID" : "VALID";
+    output.append(status);
+    if (invalid) {
+      const recommendation = document.createElement("div");
+      recommendation.className = "recommendation";
+      recommendation.textContent = "Recommendation: Increase maximum rarity or decrease level of selected affixes";
+      output.append(recommendation);
+    }
+    if (!result.possible) {
+      output.append(result.message || "No matching set found.");
+      const divider = document.createElement("hr");
+      divider.className = "result-divider";
+      output.append(divider);
+      const search = document.createElement("div");
+      search.className = "search-footer";
+      search.textContent = `Search: ${Number(result.tested || 0).toLocaleString()} combinations · ${Number(result.seconds || 0).toFixed(2)}s`;
+      output.append(search);
+      appendRules(output, result.rules);
+      return;
+    }
+    for (const set of result.sets) {
+      const rarities = new Set(set.pieces.map(piece => piece.rarity));
+      const resultAffixes = set.affixes || [];
+      const targets = resultAffixes.filter(affix => affix.target);
+      const gems = set.pieces.flatMap(piece => Array.isArray(piece.gems) ? piece.gems : []);
+      const gemSlots = gems.length;
+      const affixSlots = gems.reduce((total, gem) => total + Number(gem.tier || 0), 0);
+      const nativeAffixCount = set.pieces.reduce((total, piece) => total + (piece.nativeAffixes && piece.nativeAffixes !== "-" ? piece.nativeAffixes.split(",").filter(name => name.trim()).length : 0), 0);
+      const summary = document.createElement("div");
+      summary.className = "build-summary";
+      const slotSummary = set.legacy
+        ? [`Unused gem slots: ${set.unusedGemSlots}`, `Unused affix slots: ${set.unusedAffixSlots}`]
+        : [`Gem slots: ${gemSlots - set.unusedGemSlots}/${gemSlots} used`, `Affix slots: ${affixSlots - set.unusedAffixSlots}/${affixSlots} used · Native affixes used: ${nativeAffixCount}`];
+      for (const text of [
+        `Price (minimum / recommended / maximum): ${set.price}`,
+        `Rarity: ${rarities.size === 1 ? [...rarities][0] : "Mixed"}`,
+        `Targets: ${targets.filter(affix => affix.result >= affix.target).length}/${targets.length} achieved`,
+        ...(result.closest ? [`Target shortfall: ${Number(result.distance || 0)}`] : []),
+        ...slotSummary,
+      ]) {
+        const line = document.createElement("div");
+        line.textContent = text;
+        summary.append(line);
+      }
+      output.append(summary);
+
+      const affixTitle = document.createElement("h3");
+      affixTitle.textContent = "Affixes";
+      output.append(affixTitle);
+      const affixTable = document.createElement("table");
+      affixTable.className = "affix-results";
+      const affixHead = affixTable.createTHead().insertRow();
+      for (const header of ["Affix", "Target", "Result", "Threshold (Wo. Wine)", "Threshold (W. wine)", "Status"]) {
+        const cell = document.createElement("th");
+        cell.textContent = header;
+        affixHead.append(cell);
+      }
+      const affixBody = affixTable.createTBody();
+      for (const affix of resultAffixes) {
+        const row = affixBody.insertRow();
+        const target = Number(affix.target || 0);
+        const resultValue = Number(affix.result || 0);
+        const status = !target ? "Bonus" : resultValue === target ? "✓" : resultValue > target ? "↑" : "↓";
+        const threshold = thresholdFor(options.affixDetails[affix.name]);
+        const thresholdStatuses = [0, Number(affix.wine || 0)].map(wine => threshold == null ? "—" : resultValue + wine >= Number(threshold) ? "✓" : "✗");
+        for (const value of [affix.name, target || "—", resultValue, ...thresholdStatuses, status]) row.insertCell().textContent = value;
+        for (let index = 3; index < 5; index++) row.cells[index].className = threshold == null ? "" : row.cells[index].textContent === "✓" ? "threshold-check" : "threshold-miss";
+        row.className = !target ? "bonus" : resultValue === target ? "equal" : resultValue > target ? "higher" : "lower";
+      }
+      output.append(affixTable);
+
+      const table = document.createElement("table");
+      const headers = ["Slot", "Rarity", "Item", "Native Affixes", "Gems"];
+      const head = table.createTHead().insertRow();
+      for (const header of headers) {
+        const cell = document.createElement("th");
+        cell.textContent = header;
+        head.append(cell);
+      }
+      head.cells[1].className = "rarity-column";
+      const body = table.createTBody();
+      for (const piece of set.pieces) {
+        const row = body.insertRow();
+        const itemName = piece.name.replace(/^(.+) (Helmet|Armor|Bracers|Pants|Greaves|Necklace|Ring)$/, "$2 — $1");
+        for (const value of [piece.type, piece.rarity, itemName, piece.nativeAffixes]) {
+          const cell = row.insertCell();
+          cell.textContent = value;
+        }
+        row.cells[1].className = "rarity-column";
+        const rarity = document.createElement("span");
+        rarity.className = "rarity-color";
+        rarity.dataset.color = piece.rarity;
+        rarity.textContent = piece.rarity === "Purple" ? "Pu" : piece.rarity?.[0] || "?";
+        rarity.title = piece.rarity || "Unknown rarity";
+        rarity.ariaLabel = piece.rarity || "Unknown rarity";
+        row.cells[1].replaceChildren(rarity);
+        row.cells[row.cells.length - 1].className = "native-affixes";
+        const gemCell = row.insertCell();
+        for (const gem of Array.isArray(piece.gems) ? piece.gems : []) {
+          const line = document.createElement("div");
+          line.className = gem.name ? `gem${gem.filled ? " gem-filled" : ""}` : "gem gem-empty";
+          const color = document.createElement("span");
+          color.className = "gem-color";
+          const socketColor = gem.color === "Any" ? "White" : gem.color;
+          const markerColors = { Blue: "#4dabf7", Green: "#69db7c", Pink: "#f783ac", Red: "#ff6b6b", White: "#f1f3f5" };
+          color.dataset.color = socketColor;
+          color.textContent = socketColor === "White" && gem.gemColor && gem.gemColor !== "White" ? gem.gemColor[0] : socketColor[0];
+          color.ariaLabel = gem.gemColor && gem.gemColor !== socketColor ? `${socketColor} socket, ${gem.gemColor} gem` : `${socketColor} gem`;
+          color.title = color.ariaLabel;
+          if (socketColor === "White" && gem.gemColor && gem.gemColor !== "White") {
+            color.classList.add("split");
+            color.style.setProperty("--gem-color", markerColors[gem.gemColor] || "#adb5bd");
+          }
+          const name = document.createElement("span");
+          name.className = "gem-name";
+          name.textContent = gem.name ? `→ ${gem.name}` : "Empty";
+          const affixes = document.createElement("span");
+          affixes.className = "gem-affixes";
+          affixes.textContent = gem.affixes ? `→ ${gem.affixes}` : "";
+          line.append(color, affixes, name);
+          gemCell.append(line);
+        }
+      }
+      output.append(table);
+    }
+    const divider = document.createElement("hr");
+    divider.className = "result-divider";
+    output.append(divider);
+    const search = document.createElement("div");
+    search.className = "search-footer";
+    search.textContent = `Search: ${Number(result.tested || 0).toLocaleString()} combinations · ${Number(result.seconds || 0).toFixed(2)}s`;
+    output.append(search);
+    appendRules(output, result.rules);
+  }
+</script>
+</body>
+</html>
