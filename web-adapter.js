@@ -35,6 +35,8 @@
   const GUIService = {
     GetOptions: () => ready.then(() => window.mistfallCore.getOptions()),
     Execute: request => ready.then(() => window.mistfallCore.execute(request)),
+    ExportCode: session => ready.then(() => window.mistfallCore.exportCode(session)),
+    ImportCode: code => ready.then(() => window.mistfallCore.importCode(code)),
     LoadSession: () => ready.then(() => loadJSON(sessionKey) || {}),
     SaveSession: session => ready.then(() => saveJSON(sessionKey, session)),
     ListResults: () => ready.then(() => Object.entries(loadJSON(resultsKey) || {})

@@ -35,7 +35,7 @@
     .wine-error { margin-top: 4px; color: #ff9696; font-size: .8rem; font-weight: 600; }
     .affix-heading span:first-child { grid-column: 2 / 3; }
     .affix-heading span:last-child { grid-column: 3 / 4; }
-    .affixes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 18px; }
+    .affixes { display: grid; grid-auto-flow: column; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(var(--affix-rows), auto); column-gap: 18px; }
     .affix { margin: 5px 0; }
     .affix label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .affix.selected label { color: #69db7c; font-weight: 700; }
@@ -53,6 +53,13 @@
     button:disabled { opacity: .6; cursor: wait; }
     .result-actions, dialog form, .saved-result-row { display: flex; align-items: center; gap: 8px; }
     .result-actions { flex-wrap: wrap; }
+    .code-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto 130px; align-items: end; gap: 8px; width: min(100%, 760px); margin: 16px 0; }
+    .code-controls label { min-width: 0; }
+    .code-controls input { width: 100%; }
+    .code-status { width: 130px; font-size: .85rem; white-space: nowrap; }
+    .code-status.success { color: #69db7c; }
+    .code-status.failure { color: #ff9696; }
+    .code-help { max-width: 760px; }
     .low-performance-toggle { flex-direction: row; align-items: center; }
     dialog { width: min(520px, calc(100% - 48px)); border: 1px solid #4b5058; border-radius: 8px; background: #1d2025; color: inherit; }
     dialog::backdrop { background: #0009; }
@@ -111,6 +118,7 @@
       .controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     @media (max-width: 760px) {
+      .code-controls { width: 100%; }
       .controls { grid-template-columns: 1fr 1fr; }
       .affix-summary { grid-template-columns: 1fr 1fr; }
       .affix-summary-card:last-child { grid-column: 1 / -1; }
@@ -119,13 +127,19 @@
       .gem-affixes { grid-column: 2; grid-row: 2; width: auto; }
       .affix-headings { grid-template-columns: repeat(2, 1fr); }
       .affix-heading:last-child { display: none; }
-      .affixes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .affixes { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(var(--affix-mobile-rows), auto); }
     }
   </style>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="8cab2508-a215-4c59-85f9-90004ad58d6e"></script><script src="web-adapter.js"></script></head>
 <body class="help-mode">
 <main>
-  <h1>Mistfall Hunter - Equipment Optimizer <button id="help-toggle" type="button" aria-expanded="true">I know what I'm doing</button> <small>Build 2026-08-11T00:52:34Z</small></h1>
+  <h1>Mistfall Hunter - Equipment Optimizer <button id="help-toggle" type="button" aria-expanded="true">I know what I'm doing</button> <small>Build 2026-08-11T02:31:56Z</small></h1>
+  <div class="code-controls">
+    <label for="import-code-input">Build Code<input id="import-code-input" type="text" placeholder="Paste build code"></label>
+    <button id="import-code" type="button">Import</button>
+    <span id="import-status" class="code-status" aria-live="polite"></span>
+  </div>
+  <div class="help-note code-help">Configure affixes based on existing build</div>
   <section class="controls">
     <label data-help="Limits equipment to the selected character class.">Class<select id="class"></select></label>
     <label data-help="Selects the weapon type, if you want to consider both weapons, change the weapon type and execute again.">Weapon<select id="weapon-class"></select></label>
@@ -191,8 +205,15 @@
     <label class="low-performance-toggle"><input id="fill-gem-slots" type="checkbox" checked> Fill Gem Slots</label>
     <label class="low-performance-toggle"><input id="low-performance" type="checkbox"> Low Performance</label>
   </div>
+  <div id="export-code-row" class="code-controls" hidden>
+    <label for="export-code">Generated Build Code<input id="export-code" type="text" readonly></label>
+    <button id="copy-code" type="button">Copy</button>
+    <span id="copy-status" class="code-status" aria-live="polite"></span>
+  </div>
+  <div class="help-note code-help">Export result build to in-game code</div>
   <div class="help-note">
     <div><strong>Execute:</strong> Starts the search.</div>
+    <div><strong>Build Code:</strong> Paste a code above to import it, or copy the generated code below Execute.</div>
     <div><strong>Save Result:</strong> Stores a successful result.</div>
     <div><strong>Load Result:</strong> Opens or deletes saved results.</div>
     <div><strong>Export Storage:</strong> Downloads the current session and saved results as a JSON file.</div>
@@ -245,6 +266,8 @@
   const rarityLabel = rarity => fullSetAffixSlots[rarity] == null ? rarity : `${rarity} (${fullSetAffixSlots[rarity]})`;
 
   const options = await GUIService.GetOptions();
+  $("affixes").style.setProperty("--affix-rows", Math.ceil(options.affixes.length / 3));
+  $("affixes").style.setProperty("--affix-mobile-rows", Math.ceil(options.affixes.length / 2));
   addOptions($("class"), options.classes);
   const updateWeapons = selected => {
     const weapons = options.weaponClasses[$("class").value] || [];
@@ -284,6 +307,17 @@
 
   let lastResult = null;
   let optimizing = false;
+  const setExportedCode = code => {
+    $("export-code").value = code || "";
+    $("export-code-row").hidden = !code;
+    $("copy-status").textContent = "";
+    $("copy-status").className = "code-status";
+  };
+  const setCodeStatus = (id, message, success) => {
+    const status = $(id);
+    status.textContent = message;
+    status.className = `code-status ${success ? "success" : "failure"}`;
+  };
 
   Events.On("optimization-progress", event => {
     if (!optimizing) return;
@@ -320,7 +354,29 @@
     $("affixes").append(row);
   }
 
-  function applySession(session, restoreHelp = true) {
+  function applyImportedAffixes(set) {
+    if (!set) return;
+    const levels = new Map();
+    const add = (name, level = 1) => {
+      if (options.affixes.includes(name)) levels.set(name, (levels.get(name) || 0) + level);
+    };
+    if (set.affixes?.length) {
+      for (const affix of set.affixes) add(affix.name, Number(affix.result || 0));
+    } else {
+      for (const piece of set.pieces || []) {
+        for (const name of (piece.nativeAffixes || "").split(/\s*,\s*/)) add(name);
+        for (const gem of piece.gems || []) {
+          for (const name of (gem.affixes || "").split(/\s*\/\s*/)) add(name);
+        }
+      }
+    }
+    for (const row of document.querySelectorAll(".affix")) {
+      row.querySelector('[data-kind="equipment"]').value = String(levels.get(row.dataset.name) || 0);
+    }
+    updateCombined();
+  }
+
+  function applySession(session, restoreHelp = true, preserveWine = false) {
     if (restoreHelp) {
       const open = session.help ?? true;
       document.body.classList.toggle("help-mode", open);
@@ -350,14 +406,16 @@
         const equipment = row.querySelector('[data-kind="equipment"]');
         const wine = row.querySelector('[data-kind="wine"]');
         equipment.value = String(affix && affix.enabled !== false ? affix.level || 0 : 0);
-        wine.value = String(affix?.wine || 0);
+        if (!preserveWine) wine.value = String(affix?.wine || 0);
       }
       lastResult = null;
+      setExportedCode("");
       const savedResult = session.hasResult || session.result?.possible ? session.result : null;
       if (savedResult) {
         try {
           render(savedResult);
           lastResult = savedResult;
+          setExportedCode(savedResult.possible && !savedResult.closest ? savedResult.sets?.[0]?.code : "");
         } catch (error) {
           $("output").className = "error";
           $("output").textContent = `Saved result is incompatible: ${error}. Configuration and affixes loaded; press Execute to optimize again.`;
@@ -498,6 +556,34 @@
       $("output").textContent = String(error);
     }
   };
+
+  $("copy-code").onclick = async () => {
+    try {
+      await navigator.clipboard.writeText($("export-code").value);
+      setCodeStatus("copy-status", "Copied to clipboard", true);
+    } catch (error) {
+      setCodeStatus("copy-status", "Copy failed", false);
+      $("output").textContent = String(error);
+    }
+  };
+
+  $("import-code").onclick = async () => {
+    const code = $("import-code-input").value.trim();
+    if (!code) {
+      setCodeStatus("import-status", "Import failed", false);
+      return;
+    }
+    try {
+      const session = await GUIService.ImportCode(code);
+      applySession(session, true, true);
+      applyImportedAffixes(session.result?.sets?.[0]);
+      await saveSession();
+      setCodeStatus("import-status", "Import succeeded", true);
+    } catch (error) {
+      setCodeStatus("import-status", "Import failed", false);
+      $("output").textContent = String(error);
+    }
+  };
   $("import-storage").onclick = () => {
     $("import-storage-file").value = "";
     $("import-storage-file").click();
@@ -607,6 +693,7 @@
     const button = $("execute");
     button.disabled = true;
     optimizing = true;
+    setExportedCode("");
     $("output").textContent = "Optimizing...";
     try {
       const request = collectRequest();
@@ -614,6 +701,7 @@
       optimizing = false;
       render(lastResult);
       $("save-result").disabled = !lastResult.possible;
+      setExportedCode(lastResult.possible && !lastResult.closest ? lastResult.sets?.[0]?.code : "");
       await saveSession();
     } catch (error) {
       $("output").textContent = String(error);
