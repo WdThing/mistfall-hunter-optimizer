@@ -3,60 +3,54 @@
   const sessionKey = "mistfall-hunter-affix-session";
   const resultsKey = "mistfall-hunter-affix-results";
   const listeners = new Set();
+  const worker = new Worker("worker.js");
+  const pending = new Map();
+  let nextRequestID = 0;
 
-  window.mistfallProgress = progress => {
-    for (const listener of listeners) listener({ data: progress });
+  worker.onmessage = ({ data }) => {
+    if (data.type === "progress") {
+      for (const listener of listeners) listener({ data: data.progress });
+      return;
+    }
+    const request = pending.get(data.id);
+    if (!request) return;
+    pending.delete(data.id);
+    if (data.error) request.reject(new Error(data.error));
+    else request.resolve(data.result);
   };
 
   const loadJSON = key => JSON.parse(localStorage.getItem(key) || "null");
   const saveJSON = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-  const ready = (async () => {
-    await new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = "wasm_exec.js";
-      script.onload = resolve;
-      script.onerror = () => reject(new Error("Could not load wasm_exec.js"));
-      document.head.append(script);
-    });
-    const go = new Go();
-    const response = await fetch("mistfall.wasm");
-    const result = await WebAssembly.instantiateStreaming(response, go.importObject);
-    go.run(result.instance);
-    while (!window.mistfallCore) await new Promise(resolve => setTimeout(resolve, 10));
-    const [database, affixes] = await Promise.all(["database.json", "affixes.json"].map(async path => {
-      const response = await fetch(path);
-      if (!response.ok) throw new Error("Could not load " + path);
-      return new Uint8Array(await response.arrayBuffer());
-    }));
-    const error = window.mistfallCore.init(database, affixes);
-    if (error) throw new Error(error);
-  })();
+  const call = (method, ...args) => new Promise((resolve, reject) => {
+    const id = ++nextRequestID;
+    pending.set(id, { resolve, reject });
+    worker.postMessage({ id, method, args });
+  });
 
   const GUIService = {
-    GetOptions: () => ready.then(() => window.mistfallCore.getOptions()),
-    Execute: request => ready.then(() => window.mistfallCore.execute(request)),
-    ExportCode: session => ready.then(() => window.mistfallCore.exportCode(session)),
-    ImportCode: code => ready.then(() => window.mistfallCore.importCode(code)),
-    LoadSession: () => ready.then(() => loadJSON(sessionKey) || {}),
-    SaveSession: session => ready.then(() => saveJSON(sessionKey, session)),
-    ListResults: () => ready.then(() => Object.entries(loadJSON(resultsKey) || {})
+    GetOptions: () => call("getOptions"),
+    Execute: request => call("execute", request),
+    ExportCode: session => call("exportCode", session),
+    ImportCode: code => call("importCode", code),
+    LoadSession: () => Promise.resolve(loadJSON(sessionKey) || {}),
+    SaveSession: session => Promise.resolve(saveJSON(sessionKey, session)),
+    ListResults: () => Promise.resolve(Object.entries(loadJSON(resultsKey) || {})
       .map(([name, value]) => ({ name, createdAt: value.createdAt }))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
-    LoadResult: name => ready.then(() => {
+    LoadResult: name => Promise.resolve().then(() => {
       const result = (loadJSON(resultsKey) || {})[name];
       if (!result) throw new Error("saved result " + name + " was not found");
       return result.session;
     }),
-    SaveResult: (name, session) => ready.then(() => {
+    SaveResult: (name, session) => Promise.resolve().then(() => {
       name = name.trim();
       if (!name || name === "." || name === ".." || name.includes("/") || name.includes("\\")) throw new Error("result name must be a file name");
       if (!session.hasResult || !session.result?.possible) throw new Error("only successful results can be saved");
       const results = loadJSON(resultsKey) || {};
-      if (results[name]) throw new Error("result " + name + " already exists");
       results[name] = { createdAt: new Date().toISOString(), session };
       saveJSON(resultsKey, results);
     }),
-    DeleteResult: name => ready.then(() => {
+    DeleteResult: name => Promise.resolve().then(() => {
       const results = loadJSON(resultsKey) || {};
       if (!results[name]) throw new Error("saved result " + name + " was not found");
       delete results[name];
