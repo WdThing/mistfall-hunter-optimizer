@@ -150,6 +150,8 @@
     .header-actions { flex-wrap: wrap; justify-content: end; }
     .header-actions button, .workspace-footer button { margin: 0; padding: 8px 12px; font-size: .82rem; }
     .header-help { width: 100%; margin: 0; }
+    .issue-jump { display: inline-block; color: #c1b5ff; font-size: .82rem; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+    .issue-jump:hover { color: #fff; }
     .section-card { margin: 16px 0; padding: 22px; background: #191b23; border: 1px solid #303440; border-radius: 12px; box-shadow: 0 10px 28px #0002; }
     .section-card > .section-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -22px -22px 20px; padding: 18px 22px; background: #1d2029; border-bottom: 1px solid #303440; border-radius: 12px 12px 0 0; }
     .section-header h2 { margin: 0; font-size: 1.1rem; }
@@ -170,6 +172,11 @@
     .execute-row .result-actions { margin-left: auto; }
     .output-card { margin-top: 16px; padding: 0; background: #0e1012; border: 1px solid #303440; border-radius: 10px; overflow: hidden; }
     #output { min-height: 260px; margin: 0; padding: 18px; border: 0; border-radius: 0; }
+    .issue-report { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 32px 0 0; padding: 22px 24px; background: linear-gradient(135deg, #242033, #1b1d27); border: 1px solid #8b6cff; border-radius: 12px; box-shadow: 0 10px 30px #0004; }
+    .issue-report h2 { margin: 0; font-size: 1.1rem; }
+    .issue-report p { margin: 6px 0 0; color: #c7c4d8; font-size: .88rem; }
+    .issue-report-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none; padding: 11px 16px; border: 1px solid #a895ff; border-radius: 7px; background: #8b6cff; color: #fff; font-weight: 700; text-decoration: none; }
+    .issue-report-link:hover { background: #a895ff; color: #fff; }
     .workspace-footer { justify-content: space-between; margin-top: 18px; padding: 14px 16px; background: #191b23; border: 1px solid #303440; border-radius: 10px; }
     .workspace-footer > div:first-child small:last-child { display: block; margin-top: 4px; }
     @media (max-width: 760px) {
@@ -183,6 +190,8 @@
       .execute-row .result-actions { margin-left: 0; }
       .workspace-footer .result-actions { justify-content: stretch; }
       .workspace-footer .result-actions button { flex: 1; }
+      .issue-report { align-items: stretch; flex-direction: column; }
+      .issue-report-link { width: 100%; box-sizing: border-box; }
     }
     .code-controls, .load-controls { width: 60%; max-width: none; align-items: center; }
     .code-controls { grid-template-columns: minmax(0, 1fr) auto minmax(120px, auto); margin: 12px 0 0; }
@@ -276,13 +285,14 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-08-11T14:25:52Z</small>
+      <small>Build 2026-08-11T14:40:42Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
         <button id="export-storage" class="outline secondary" type="button">Export Site Data</button>
         <button id="import-storage" class="outline secondary" type="button">Import Site Data</button>
         <button id="help-toggle" class="outline secondary" type="button" aria-expanded="true">Disable Help</button>
       </div>
       <div class="help-note header-help"><strong>Export Site Data:</strong> Downloads this site's session and saved results. <strong>Import Site Data:</strong> Restores a previous export.</div>
+      <a class="issue-jump" href="#issue-report">Help us improve — check the bottom ↘</a>
     </div>
   </header>
   <input id="import-storage-file" type="file" accept="application/json" hidden>
@@ -397,6 +407,14 @@
     <div id="output">Select affixes and press Execute.</div>
   </article>
   <div class="help-note">The output shows validity, prices, affix totals, equipment, gems, search time, and optimization rules.</div>
+  <aside id="issue-report" class="issue-report" aria-labelledby="issue-report-title">
+    <div>
+      <small class="kicker">Help improve the optimizer</small>
+      <h2 id="issue-report-title">Found a problem or have a suggestion?</h2>
+      <p>Please report it on GitHub so it can be tracked and fixed.</p>
+    </div>
+    <a class="issue-report-link" href="https://github.com/WdThing/mistfall-hunter-optimizer/issues" target="_blank" rel="noopener noreferrer">Open GitHub Issues <span aria-hidden="true">↗</span></a>
+  </aside>
 </main>
 <script type="module">
   const Events = window.mistfallWeb
