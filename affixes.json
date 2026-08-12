@@ -15,7 +15,7 @@
     },
     {
       "name": "Eloquence",
-      "description": "Increases Chanting Speed. Upon reaching a certain level, chanting cannot be interrupted by minor Impact. Cooldown: 10s.",
+      "description": "Increases Chanting Speed. Upon reaching a certain level, chanting cannot be interrupted by minor Impact. Cooldown: 15s.",
       "levels": {
         "1": "Chanting Speed +3%.",
         "2": "Chanting Speed +6%.",

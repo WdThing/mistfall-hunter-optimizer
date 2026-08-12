@@ -50,10 +50,13 @@
     .affix { margin: 5px 0; }
     .affix label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .affix.selected label { color: #69db7c; font-weight: 700; }
+    .affix.over-max label { color: #ff6b6b; }
     .affix[data-tooltip] { position: relative; }
     .affix[data-tooltip]::after { content: attr(data-tooltip); position: absolute; z-index: 10; left: 0; top: calc(100% + 6px); width: 280px; padding: 8px; box-sizing: border-box; background: #24282e; border: 1px solid #4b5058; color: #eee; white-space: pre-wrap; opacity: 0; visibility: hidden; pointer-events: none; }
     .affix[data-tooltip]:hover::after, .affix[data-tooltip]:focus-within::after { opacity: 1; visibility: visible; }
     .affix input[type=number] { width: 54px; }
+    .affix input[type=number].has-points { border-color: #ffd43b; box-shadow: 0 0 0 1px #ffd43b; }
+    .affix input[type=number].over-max { border-color: #ff6b6b; box-shadow: 0 0 0 1px #ff6b6b; }
     .combined { margin: 24px 0; padding-top: 16px; border-top: 1px solid #343940; }
     .combined h3 { margin-top: 0; }
     .combined-entry { margin: 10px 0; }
@@ -316,7 +319,7 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-08-12T13:04:38Z</small>
+      <small>Build 2026-08-12T23:23:50Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
         <button id="export-storage" class="outline secondary" type="button">Export Site Data</button>
         <button id="import-storage" class="outline secondary" type="button">Import Site Data</button>
@@ -794,9 +797,21 @@
 
   function affixValues() {
     return [...document.querySelectorAll(".affix")].map(row => {
-      const level = Number(row.querySelector('[data-kind="equipment"]').value);
-      const wine = Number(row.querySelector('[data-kind="wine"]').value);
-      row.classList.toggle("selected", level + wine > 0);
+      const equipment = row.querySelector('[data-kind="equipment"]');
+      const wineInput = row.querySelector('[data-kind="wine"]');
+      const level = Number(equipment.value);
+      const wine = Number(wineInput.value);
+      const total = level + wine;
+      const details = options.affixDetails[row.dataset.name];
+      const maxLevel = Math.max(...Object.keys(details.levels).map(Number));
+      const threshold = thresholdFor(details);
+      const overMax = total > maxLevel;
+      equipment.classList.toggle("has-points", level > 0);
+      wineInput.classList.toggle("has-points", wine > 0);
+      equipment.classList.toggle("over-max", overMax && level > 0);
+      wineInput.classList.toggle("over-max", overMax && wine > 0);
+      row.classList.toggle("over-max", overMax);
+      row.classList.toggle("selected", total >= maxLevel || (threshold != null && total >= Number(threshold)));
       return {
         name: row.dataset.name,
         enabled: level > 0,
