@@ -40,6 +40,8 @@
     .affix-summary-card { min-width: 0; padding: 12px 14px; background: #24282e; border: 1px solid #343940; border-radius: 8px; }
     .affix-summary-label { color: #aaa; font-size: .8rem; }
     .affix-summary-value { margin-top: 4px; font-size: 1.05rem; font-weight: 700; }
+    .affix-notice { position: fixed; z-index: 20; top: 20px; left: 50%; padding: 10px 14px; border: 2px solid #b8a4ff; border-radius: 6px; background: #f5f2ff; box-shadow: 0 8px 24px #000a; color: #17191d; font-weight: 700; line-height: 1.4; white-space: pre-line; opacity: 0; pointer-events: none; transform: translate(-50%, -8px); transition: opacity .15s, transform .15s, visibility .15s; visibility: hidden; }
+    .affix-notice.visible { opacity: 1; transform: translate(-50%, 0); visibility: visible; }
     .affix-observation.impossible { color: #ff9696; }
     .wine-error { margin-top: 4px; color: #ff9696; font-size: .8rem; font-weight: 600; }
     .affix-heading span:first-child { grid-column: 2 / 3; }
@@ -244,10 +246,10 @@
     .affix-category-heading span { color: #969baa; font-size: .72rem; text-align: center; }
     .affix-category-list .affix { position: relative; margin: 0; padding: 8px 0; border-bottom: 1px solid #303440; }
     .affix-category-list .affix label { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .affix input[type=number] { width: 64px; min-width: 0; padding: 7px 4px; text-align: center; }
+    .affix input[type=number] { width: 64px; min-width: 0; padding: 7px 4px; text-align: center; user-select: none; }
     .affix-tooltip { position: absolute; z-index: 20; left: 0; top: calc(100% - 2px); width: max-content; min-width: 280px; max-width: min(720px, calc(100vw - 32px)); max-height: 280px; padding: 10px 12px; overflow: auto; background: #242733; border: 1px solid #555a6a; border-radius: 7px; box-shadow: 0 10px 28px #0008; color: #f1f2f5; font-size: .78rem; line-height: 1.45; opacity: 0; pointer-events: none; visibility: hidden; white-space: normal; overflow-wrap: anywhere; }
     .affix-tooltip-level { white-space: nowrap; }
-    .affix:hover .affix-tooltip, .affix:focus-within .affix-tooltip { opacity: 1; visibility: visible; }
+    .affix:hover .affix-tooltip { opacity: 1; visibility: visible; }
     .workspace-footer { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; }
     .workspace-code { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(120px, auto); align-items: center; gap: 8px; min-width: 0; width: 100%; }
     .workspace-code button { height: 42px; margin: 0; }
@@ -314,7 +316,7 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-08-11T17:09:55Z</small>
+      <small>Build 2026-08-12T13:04:38Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
         <button id="export-storage" class="outline secondary" type="button">Export Site Data</button>
         <button id="import-storage" class="outline secondary" type="button">Import Site Data</button>
@@ -420,6 +422,7 @@
     </div>
   </div>
   <div class="help-note">Enter equipment and wine levels. The summary cards show the sum of each column. Wine has a maximum total of 8. The recommendation shows the required rarity range.</div>
+  <div id="affix-notice" class="affix-notice" role="status" aria-live="polite"></div>
   <div id="affixes" class="affixes"></div>
   <section class="combined">
     <h3>Combined affixes</h3>
@@ -563,6 +566,14 @@
 
   let lastResult = null;
   let optimizing = false;
+  let affixNoticeTimer;
+  const showAffixNotice = message => {
+    const notice = $("affix-notice");
+    notice.textContent = message;
+    notice.classList.add("visible");
+    clearTimeout(affixNoticeTimer);
+    affixNoticeTimer = setTimeout(() => notice.classList.remove("visible"), 3000);
+  };
   const setExportedCode = code => {
     $("export-code").value = code || "";
     $("copy-status").textContent = "";
@@ -636,8 +647,8 @@
       wine.value = "0";
       wine.dataset.kind = "wine";
       wine.ariaLabel = `${name} wine level`;
-      equipment.oninput = updateCombined;
-      wine.oninput = updateCombined;
+      equipment.oninput = () => updateCombined(equipment);
+      wine.oninput = () => updateCombined(wine);
       row.append(label, equipment, wine, tooltip);
       row.dataset.name = name;
       list.append(row);
@@ -807,32 +818,36 @@
     return { label: "Gray/White + Green", minimum: "White" };
   }
 
-  function updateCombined() {
+  function updateCombined(source) {
     updateRarityMarkers();
     const combined = $("combined-affixes");
-    const affixes = affixValues();
+    let affixes = affixValues();
     const equipmentTotal = affixes.reduce((total, affix) => total + affix.level, 0);
     const wineTotal = affixes.reduce((total, affix) => total + affix.wine, 0);
-    $("equipment-level-total").textContent = equipmentTotal;
-    $("wine-level-total").textContent = wineTotal + "/8";
-    const {label: recommendation, minimum: requiredRarity} = rarityRecommendation(equipmentTotal);
+    if (source) {
+      const limit = source.dataset.kind === "equipment"
+        ? fullSetAffixSlots[$("max-rarity").value] ?? 0
+        : 8;
+      const total = source.dataset.kind === "equipment" ? equipmentTotal : wineTotal;
+      if (total > limit) {
+        source.value = String(Math.max(0, Number(source.value) - total + limit));
+        affixes = affixValues();
+        showAffixNotice(source.dataset.kind === "equipment"
+          ? "Maximum number of affix levels for the selected maximum rarity reached.\n\nRecommendation: Increase maximum rarity or re-distribute affixes' levels"
+          : "Maximum number of victory wine levels reached.\n\nRecommendation: Re-distribute victory wine levels");
+      }
+    }
+    const correctedEquipmentTotal = affixes.reduce((total, affix) => total + affix.level, 0);
+    const correctedWineTotal = affixes.reduce((total, affix) => total + affix.wine, 0);
+    $("equipment-level-total").textContent = correctedEquipmentTotal;
+    $("wine-level-total").textContent = correctedWineTotal + "/8";
+    const {label: recommendation, minimum: requiredRarity} = rarityRecommendation(correctedEquipmentTotal);
     const impossible = !requiredRarity || options.rarities.indexOf(requiredRarity) > options.rarities.indexOf($("max-rarity").value);
-    const impossibleMessage = equipmentTotal > 32 ? "Impossible with highest rarity, reduce number of affixes" : "Impossible with maximum rarity, increase rarity or reduce number of equipment affixes";
+    const impossibleMessage = correctedEquipmentTotal > 32 ? "Impossible with highest rarity, reduce number of affixes" : "Impossible with maximum rarity, increase rarity or reduce number of equipment affixes";
     const observation = $("affix-observation");
     observation.textContent = impossible ? impossibleMessage : recommendation;
     observation.className = "affix-summary-value affix-observation" + (impossible ? " impossible" : "");
-    $("wine-error").textContent = wineTotal > 8 ? "Wine limit exceeded. Reduce wine levels." : "";
-    const equipmentLimit = fullSetAffixSlots[$("max-rarity").value] ?? 0;
-    const equipmentRemaining = Math.max(0, equipmentLimit - equipmentTotal);
-    const wineRemaining = Math.max(0, 8 - wineTotal);
-    for (const row of document.querySelectorAll(".affix")) {
-      const equipment = row.querySelector('[data-kind="equipment"]');
-      const wine = row.querySelector('[data-kind="wine"]');
-      const equipmentLevel = Number(equipment.value);
-      const wineLevel = Number(wine.value);
-      equipment.max = String(Math.min(Number(equipment.dataset.maxLevel), equipmentLevel + equipmentRemaining));
-      wine.max = String(Math.min(2, wineLevel + wineRemaining));
-    }
+    $("wine-error").textContent = correctedWineTotal > 8 ? "Wine limit exceeded. Reduce wine levels." : "";
     combined.replaceChildren();
     for (const affix of affixes) {
       if (!affix.enabled && !affix.wine) continue;
@@ -855,7 +870,7 @@
       combined.append(item);
     }
     if (!combined.children.length) combined.textContent = "No affixes selected.";
-    $("execute").disabled = wineTotal > 8 || impossible;
+    $("execute").disabled = correctedWineTotal > 8 || impossible;
   }
   function effectCount(text) { return text.split(/[.,](?=\s|$)/).filter(Boolean).length; }
   function thresholdFor(details) {
