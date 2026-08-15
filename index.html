@@ -73,6 +73,7 @@
     .code-status.failure { color: #ff9696; }
     .code-help { max-width: 760px; }
     .result-toggle { flex-direction: row; align-items: center; }
+    .progress-stage { display: inline-block; width: 24ch; }
     #output { min-height: 260px; margin-top: 18px; padding: 16px; overflow: auto; background: #0e1012; border: 1px solid #343940; border-radius: 6px; }
     .build-title { margin-bottom: 10px; font-size: 1.05rem; font-weight: 700; }
     .build-title.valid { color: #69db7c; }
@@ -1232,7 +1233,10 @@
   Events.On("optimization-progress", event => {
     if (!optimizing) return;
     const { stage, current, total, tested } = event.data;
-    $("output").textContent = `Optimizing — ${stage} (${current}/${total} slots) — ${Number(tested).toLocaleString()} combinations tested`;
+    const stageText = document.createElement("span");
+    stageText.className = "progress-stage";
+    stageText.textContent = `${stage} (${current}/${total} slots)`;
+    $("output").replaceChildren(document.createTextNode("Optimizing — "), stageText, document.createTextNode(` — ${Number(tested).toLocaleString()} combinations tested`));
   });
 
   const categoryOrder = ["Offensive", "Defensive", "Functional"];
