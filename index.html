@@ -72,7 +72,7 @@
     .code-status.success { color: #69db7c; }
     .code-status.failure { color: #ff9696; }
     .code-help { max-width: 760px; }
-    .low-performance-toggle { flex-direction: row; align-items: center; }
+    .result-toggle { flex-direction: row; align-items: center; }
     #output { min-height: 260px; margin-top: 18px; padding: 16px; overflow: auto; background: #0e1012; border: 1px solid #343940; border-radius: 6px; }
     .build-title { margin-bottom: 10px; font-size: 1.05rem; font-weight: 700; }
     .build-title.valid { color: #69db7c; }
@@ -596,11 +596,10 @@
     <div><small class="kicker">Ready to search?</small><strong>Find the most affordable matching setup.</strong></div>
       <div class="result-actions">
         <button id="execute-secondary" data-execute type="button">Optimize</button>
-        <label class="low-performance-toggle"><input id="fill-gem-slots" type="checkbox" checked> Fill Gem Slots</label>
-        <label class="low-performance-toggle"><input id="low-performance" type="checkbox"> Low Performance</label>
+        <label class="result-toggle"><input id="fill-gem-slots" type="checkbox" checked> Fill Gem Slots</label>
       </div>
     </div>
-    <div class="help-note execute-help"><strong>Optimize:</strong> Starts the search. <strong>Fill Gem Slots:</strong> Uses compatible empty sockets. <strong>Low Performance:</strong> Uses less CPU but takes longer.</div>
+    <div class="help-note execute-help"><strong>Optimize:</strong> Starts the search. <strong>Fill Gem Slots:</strong> Uses compatible empty sockets.</div>
   <section class="workspace-footer">
     <div><small class="kicker">Your workspace</small><strong>Save or export your progress</strong><small>Keep a result for later or move it to another device.</small></div>
     <div id="export-code-row" class="workspace-code">
@@ -1407,7 +1406,6 @@
     updateWeaponRarities(fixedRarities.weapon || request.weaponRarity);
     updateFixedRarities(fixedRarities);
     $("fill-gem-slots").checked = request.fillGemSlots !== false;
-    $("low-performance").checked = !!request.lowPerformance;
     for (const accessory of ["ring", "amulet"]) {
       const value = request[accessory] || "Any";
       const parts = value === "Any" ? [] : value.split("/");
@@ -1561,8 +1559,7 @@
       fixedRarities,
       statPriority: [...statPriorityList.children].map(row => row.dataset.stat),
       affixes,
-      fillGemSlots: $("fill-gem-slots").checked,
-      lowPerformance: $("low-performance").checked
+      fillGemSlots: $("fill-gem-slots").checked
     };
   };
 
