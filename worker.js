@@ -6,12 +6,7 @@ const ready = (async () => {
   const result = await WebAssembly.instantiateStreaming(response, go.importObject);
   go.run(result.instance);
   while (!self.mistfallCore) await new Promise(resolve => setTimeout(resolve, 10));
-  const [database, affixes] = await Promise.all(["database.json", "affixes.json"].map(async path => {
-    const response = await fetch(path);
-    if (!response.ok) throw new Error("Could not load " + path);
-    return new Uint8Array(await response.arrayBuffer());
-  }));
-  const error = self.mistfallCore.init(database, affixes);
+  const error = self.mistfallCore.init();
   if (error) throw new Error(error);
 })();
 
