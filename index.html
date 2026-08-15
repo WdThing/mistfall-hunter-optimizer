@@ -36,10 +36,6 @@
     .affix-headings { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: 18px; }
     .affix-heading, .affix { display: grid; grid-template-columns: minmax(0, 1fr) 54px 54px; align-items: center; gap: 6px; }
     .affix-heading { color: #aaa; font-size: .8rem; text-align: center; }
-    .affix-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 14px 0 18px; }
-    .affix-summary-card { min-width: 0; padding: 12px 14px; background: #24282e; border: 1px solid #343940; border-radius: 8px; }
-    .affix-summary-label { color: #aaa; font-size: .8rem; }
-    .affix-summary-value { margin-top: 4px; font-size: 1.05rem; font-weight: 700; }
     .affix-notice { position: fixed; z-index: 20; top: 20px; left: 50%; padding: 10px 14px; border: 2px solid #b8a4ff; border-radius: 6px; background: #f5f2ff; box-shadow: 0 8px 24px #000a; color: #17191d; font-weight: 700; line-height: 1.4; white-space: pre-line; opacity: 0; pointer-events: none; transform: translate(-50%, -8px); transition: opacity .15s, transform .15s, visibility .15s; visibility: hidden; }
     .affix-notice.visible { opacity: 1; transform: translate(-50%, 0); visibility: visible; }
     .affix-observation.impossible { color: #ff9696; }
@@ -48,13 +44,17 @@
     .affix-heading span:last-child { grid-column: 3 / 4; }
     .affixes { display: grid; grid-auto-flow: column; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(var(--affix-rows), auto); column-gap: 18px; }
     .affix { margin: 5px 0; }
-    .affix label { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .affix.selected label { color: #69db7c; font-weight: 700; }
-    .affix.over-max label { color: #ff6b6b; }
+    .affix-name-label { display: flex; min-width: 0; align-items: center; gap: 6px; }
+    .affix-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .affix-block { display: inline-flex; flex: none; flex-direction: row; align-items: center; gap: 3px; color: #969baa; font-size: .68rem; font-weight: 400; white-space: nowrap; }
+    .affix-block input { width: 14px; height: 14px; margin: 0; padding: 0; }
+    .affix.selected .affix-name { color: #69db7c; font-weight: 700; }
+    .affix.over-max .affix-name { color: #ff6b6b; }
+    .affix.blocked .affix-name { color: #969baa; text-decoration: line-through; }
+    .affix.blocked .affix-block { color: #ff9696; }
     .affix[data-tooltip] { position: relative; }
     .affix[data-tooltip]::after { content: attr(data-tooltip); position: absolute; z-index: 10; left: 0; top: calc(100% + 6px); width: 280px; padding: 8px; box-sizing: border-box; background: #24282e; border: 1px solid #4b5058; color: #eee; white-space: pre-wrap; opacity: 0; visibility: hidden; pointer-events: none; }
-    .affix[data-tooltip]:hover::after, .affix[data-tooltip]:focus-within::after { opacity: 1; visibility: visible; }
-    .affix input[type=number] { width: 54px; }
+    .affix[data-tooltip]:hover::after { opacity: 1; visibility: visible; }
     .affix input[type=number].has-points { border-color: #ffd43b; box-shadow: 0 0 0 1px #ffd43b; }
     .affix input[type=number].over-max { border-color: #ff6b6b; box-shadow: 0 0 0 1px #ff6b6b; }
     .combined { margin: 24px 0; padding-top: 16px; border-top: 1px solid #343940; }
@@ -80,8 +80,8 @@
     .build-title.valid { color: #69db7c; }
     .build-title.invalid, .recommendation { color: #ff9696; }
     .recommendation { margin-bottom: 10px; font-weight: 600; }
-    .build-summary { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); gap: 4px 32px; margin-bottom: 18px; }
-    .affix-results { width: auto; min-width: 430px; margin-bottom: 18px; }
+    .build-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 32px; margin-bottom: 18px; }
+    .affix-results { width: auto; min-width: 0; margin-bottom: 18px; }
     .affix-results .equal { color: #eee; }
     .affix-results .higher { color: #69db7c; }
     .affix-results .lower { color: #ff9696; font-weight: 700; }
@@ -123,6 +123,33 @@
     th, td { padding: 7px 9px; border: 1px solid #343940; text-align: left; vertical-align: middle; }
     th { background: #24282e; }
     tbody tr:nth-child(even) { background: #1b1e23; }
+    .comparer-table-wrap { overflow-x: auto; }
+    .comparer-table { min-width: 760px; table-layout: fixed; }
+    .comparer-table th:first-child { width: 130px; }
+    .comparer-table th:not(:first-child) { width: 190px; }
+    .comparer-table thead th { color: #e2e3e8; }
+    .comparer-table tbody th { color: #b9bcc4; font-size: .78rem; }
+    .comparer-code { display: flex; align-items: left; justify-content: center; gap: 6px; min-width: 0; }
+    .comparer-code input { flex: 0 1 280px; width: 280px; min-width: 0; height: 46px; box-sizing: border-box; white-space: nowrap; }
+    .comparer-code button { flex: 0 0 auto; width: auto; height: 46px; margin: 0; padding: 7px 10px; white-space: nowrap; }
+    .comparer-remove { float: right; padding: 3px 7px; font-size: .7rem; }
+    .comparer-status { font-weight: 700; }
+    .comparer-status.valid { color: #69db7c; }
+    .comparer-status.invalid { color: #ff9696; }
+    .comparer-status.empty { color: #969baa; }
+    .comparer-detail { display: block; margin-top: 3px; color: #969baa; font-size: .72rem; }
+    .comparer-affix-level { font-weight: 700; }
+    .comparer-affix-level.missing { color: #969baa; font-weight: 400; }
+    .comparer-affix-status { display: block; margin-top: 3px; color: #b9bcc4; font-size: .72rem; }
+    .comparer-affix-name { cursor: help; }
+    .comparer-tooltip { position: fixed; z-index: 100; width: max-content; max-width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 32px); box-sizing: border-box; padding: 10px 12px; overflow-y: auto; background: #242733; border: 1px solid #555a6a; border-radius: 7px; box-shadow: 0 10px 28px #0008; color: #f1f2f5; font-size: .78rem; line-height: 1.45; opacity: 0; pointer-events: none; visibility: hidden; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .comparer-tooltip.visible { opacity: 1; visibility: visible; }
+    .comparer-section .search-footer { margin: 0; padding: 12px; }
+    body[data-page="optimizer"] .comparison-page-section { display: none; }
+    body[data-page="comparison"] .workspace { grid-template-columns: minmax(0, 1fr); }
+    body[data-page="comparison"] .workspace-main > *:not(.comparison-page-section), body[data-page="comparison"] .build-sidebar { display: none; }
+    body[data-page="comparison"] .comparison-page-section { display: block; margin-top: 0; }
+    body[data-page="comparison"] .affix-tooltip { display: none !important; }
     .error { color: #ff9696; white-space: pre-wrap; }
     @media (max-width: 1100px) {
       .controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -130,8 +157,6 @@
     @media (max-width: 760px) {
       .code-controls { width: 100%; }
       .controls { grid-template-columns: 1fr 1fr; }
-      .affix-summary { grid-template-columns: 1fr 1fr; }
-      .affix-summary-card:last-child { grid-column: 1 / -1; }
       .build-summary { grid-template-columns: 1fr; }
       .gem { grid-template-columns: 28px minmax(0, 1fr) 24px; }
       .gem-affixes { grid-column: 2 / -1; grid-row: 2; width: auto; }
@@ -151,11 +176,15 @@
       --pico-form-element-background-color: #20232b;
     }
     body { min-height: 100vh; padding: 28px 20px 48px; background: #101116; }
-    main.container { max-width: 1180px; padding: 0; }
+    main.container { max-width: 1686px; padding: 0; }
     .app-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 28px; padding: 4px 2px 20px; border-bottom: 1px solid #303440; }
     .kicker { display: block; margin-bottom: 6px; color: #a895ff; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
     .app-header h1 { display: block; margin: 0; font-size: clamp(1.55rem, 3vw, 2.2rem); letter-spacing: -.035em; }
     .app-header h1 span { color: #969baa; font-weight: 500; }
+    .page-tabs { display: flex; justify-content: flex-start; gap: 6px; max-width: 1686px; margin: 0 auto 18px; border-bottom: 1px solid #303440; }
+    .page-tab { margin: 0; padding: 9px 16px; border: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; background: transparent; color: #969baa; font-size: .86rem; }
+    .page-tab:hover { background: #242733; color: #fff; box-shadow: none; transform: none; }
+    .page-tab.active { border-bottom-color: #a895ff; color: #fff; }
     .subtitle, .section-header p { margin: 7px 0 0; color: #969baa; font-size: .88rem; }
     .header-side { display: flex; flex-direction: column; align-items: end; gap: 12px; }
     .header-side > small, .workspace-footer small { color: #969baa; font-size: .75rem; }
@@ -163,8 +192,13 @@
     .header-actions { flex-wrap: wrap; justify-content: end; }
     .header-actions button, .workspace-footer button { margin: 0; padding: 8px 12px; font-size: .82rem; }
     .header-help { width: 100%; margin: 0; }
-    .issue-jump { display: inline-block; color: #c1b5ff; font-size: .82rem; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
-    .issue-jump:hover { color: #fff; }
+    .header-menu { position: relative; }
+    .header-menu summary { display: flex; align-items: center; justify-content: center; height: 42px; min-width: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #555a6a; border-radius: 7px; color: #e2e3e8; cursor: pointer; font-size: 1.25rem; list-style: none; }
+    .header-menu summary::-webkit-details-marker { display: none; }
+    .header-menu > div { position: absolute; z-index: 40; top: calc(100% + 6px); right: 0; display: grid; gap: 5px; min-width: 170px; padding: 8px; background: #20232b; border: 1px solid #555a6a; border-radius: 7px; box-shadow: 0 10px 28px #0008; }
+    .header-menu button, .header-menu a { width: 100%; margin: 0; padding: 7px 9px; color: #e2e3e8; font-size: .78rem; text-align: left; text-decoration: none; }
+    .header-menu a:hover { background: #292c37; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .section-card { margin: 16px 0; padding: 22px; background: #191b23; border: 1px solid #303440; border-radius: 12px; box-shadow: 0 10px 28px #0002; }
     .section-card > .section-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -22px -22px 20px; padding: 18px 22px; background: #1d2029; border-bottom: 1px solid #303440; border-radius: 12px 12px 0 0; }
     .section-header h2 { margin: 0; font-size: 1.1rem; }
@@ -176,27 +210,25 @@
     .advanced-config summary { padding: 14px 0 4px; color: #c1b5ff; cursor: pointer; font-weight: 700; }
     .advanced-config-body { padding-top: 12px; }
     .advanced-config-body > p { margin: 0 0 14px; color: #969baa; font-size: .82rem; }
+    .innate-priority { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; color: #e2e3e8; font-size: .82rem; }
+    .innate-priority span { padding: 5px 8px; background: #20232b; border: 1px solid #343940; border-radius: 6px; }
+    .innate-priority em { color: #969baa; font-size: .72rem; font-style: normal; }
+    .stat-priority { margin: 0 0 14px; color: #969baa; font-size: .82rem; }
+    .stat-priority strong { display: block; margin-bottom: 8px; color: #e2e3e8; }
+    .stat-priority ol { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: stat-priority; }
+    .stat-priority li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 8px; background: #20232b; border: 1px solid #343940; border-radius: 6px; color: #e2e3e8; counter-increment: stat-priority; }
+    .stat-priority li::before { content: counter(stat-priority) "."; color: #969baa; text-align: right; }
+    .priority-actions { display: flex; gap: 4px; }
+    .priority-actions button { width: 28px; height: 28px; margin: 0; padding: 0; line-height: 1; }
     .fixed-rarities { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
     .fixed-rarities label { min-width: 0; font-size: .82rem; font-weight: 650; }
     .fixed-rarities select { margin-top: 5px; }
-    .priority-config { max-width: 560px; margin-top: 18px; }
-    .priority-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .priority-heading button { margin: 0; padding: 5px 10px; font-size: .76rem; }
-    .priority-config strong { display: block; font-size: .85rem; }
-    .priority-config small { color: #969baa; font-size: .78rem; }
-    .rarity-priority { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; counter-reset: priority; }
-    .rarity-priority-item { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 6px 8px; background: #20232b; border: 1px solid #343940; border-radius: 6px; counter-increment: priority; }
-    .rarity-priority-item::before { color: #969baa; content: counter(priority) "."; font-size: .78rem; text-align: right; }
-    .rarity-priority-item span { font-size: .84rem; }
-    .priority-actions { display: flex; gap: 4px; }
-    .priority-actions button { width: 28px; height: 28px; margin: 0; padding: 0; line-height: 1; }
     select, input, button { border-radius: 7px; }
     button { font-weight: 700; transition: transform .15s ease, box-shadow .15s ease; }
     button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 14px #0003; }
     button.outline, button.secondary { background: transparent; border-color: #555a6a; color: #e2e3e8; }
     button.outline:hover:not(:disabled), button.secondary:hover:not(:disabled) { background: #292c37; border-color: #a895ff; }
     .affix-section .section-header { align-items: center; }
-    .affix-summary-card { background: #20232b; }
     .combined { margin: 24px 0 0; padding-top: 18px; border-top: 1px solid #303440; }
     .execute-row { justify-content: space-between; margin: 20px 0 12px; padding: 14px 16px; background: #191b23; border: 1px solid #303440; border-radius: 10px; }
     .execute-row strong, .workspace-footer strong { display: block; font-size: .88rem; }
@@ -239,7 +271,7 @@
     .accessory select { min-width: 0; padding-left: 8px; padding-right: 20px; }
     .affixes { display: grid; grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: none; gap: 24px; }
     .affix-category { min-width: 0; }
-    .affix-category-heading, .affix { display: grid; grid-template-columns: minmax(0, 1fr) 64px 64px; align-items: center; gap: 8px; }
+    .affix-category-heading, .affix { display: grid; grid-template-columns: minmax(0, 1fr) 59px 59px; align-items: center; gap: 8px; }
     .affix-category-heading { padding: 0 0 9px; border-bottom: 1px solid #454956; }
     .affix-category-heading h3 { display: flex; align-items: center; gap: 8px; margin: 0; color: #e2e3e8; font-size: .95rem; }
     .category-title::before { width: 10px; height: 10px; flex: none; border-radius: 50%; content: ""; }
@@ -248,8 +280,8 @@
     .category-title.functional::before { background: #ffd43b; }
     .affix-category-heading span { color: #969baa; font-size: .72rem; text-align: center; }
     .affix-category-list .affix { position: relative; margin: 0; padding: 8px 0; border-bottom: 1px solid #303440; }
-    .affix-category-list .affix label { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .affix input[type=number] { width: 64px; min-width: 0; padding: 7px 4px; text-align: center; user-select: none; }
+    .affix-category-list .affix-name-label { width: 200px; max-width: 100%; }
+    .affix input[type=number] { width: 100%; min-width: 0; padding: 7px 4px; text-align: center; user-select: none; }
     .affix-tooltip { position: absolute; z-index: 20; left: 0; top: calc(100% - 2px); width: max-content; min-width: 280px; max-width: min(720px, calc(100vw - 32px)); max-height: 280px; padding: 10px 12px; overflow: auto; background: #242733; border: 1px solid #555a6a; border-radius: 7px; box-shadow: 0 10px 28px #0008; color: #f1f2f5; font-size: .78rem; line-height: 1.45; opacity: 0; pointer-events: none; visibility: hidden; white-space: normal; overflow-wrap: anywhere; }
     .affix-tooltip-level { white-space: nowrap; }
     .affix:hover .affix-tooltip { opacity: 1; visibility: visible; }
@@ -257,8 +289,6 @@
     .workspace-code { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(120px, auto); align-items: center; gap: 8px; min-width: 0; width: 100%; }
     .workspace-code button { height: 42px; margin: 0; }
     .workspace-actions { display: grid; grid-template-columns: minmax(150px, 1fr) auto; grid-template-rows: auto auto; align-items: center; gap: 8px; }
-    .workspace-actions > label { grid-column: 1; grid-row: 1; display: block; margin: 0; font-size: .82rem; }
-    .workspace-actions input { width: 100%; min-width: 0; margin: 4px 0 0; }
     .workspace-actions > button { grid-column: 2; grid-row: 1; align-self: end; height: 42px; margin: 0; white-space: nowrap; }
     .workspace-actions > .code-status { grid-column: 1 / -1; grid-row: 2; min-height: 0; }
     @media (max-width: 1100px) {
@@ -273,7 +303,6 @@
       .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .controls .rarity-range { grid-column: 1 / -1; }
       .fixed-rarities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .rarity-priority { grid-template-columns: 1fr; }
       .load-controls > label { grid-column: 1 / -1; }
       .load-controls > select { grid-column: 1; grid-row: 2; }
       #load-result { grid-column: 2; grid-row: 2; }
@@ -308,9 +337,104 @@
       .load-controls > .help-note { grid-row: 4; }
       .load-controls > .code-status { grid-row: 5; }
     }
+    html { scroll-behavior: smooth; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; justify-content: center; }
+    .workspace-main > .section-card:first-child { margin-top: 0; }
+    .left-nav { display: none; }
+    .build-sidebar { position: sticky; top: 18px; max-height: calc(100vh - 36px); overflow-x: hidden; overflow-y: auto; }
+    .left-nav { padding: 16px 12px; background: #191b23; border: 1px solid #303440; border-radius: 12px; }
+    .left-nav a { display: flex; align-items: center; gap: 8px; margin: 2px 0; padding: 9px 10px; border-radius: 7px; color: #c7c9d0; font-size: .86rem; text-decoration: none; }
+    .left-nav a:hover, .left-nav a[aria-current="step"] { background: #292c37; color: #fff; }
+    .left-nav a[data-section]::before { width: 9px; height: 9px; border: 1px solid #747987; border-radius: 50%; content: ""; }
+    .left-nav a[data-section][data-state="complete"]::before { border-color: #69db7c; background: #69db7c; box-shadow: inset 0 0 0 2px #191b23; }
+    .left-nav a[data-section][data-state="error"]::before { border-color: #ff6b6b; background: #ff6b6b; }
+    .left-nav a[data-section][data-state="current"]::before { border-color: #a895ff; background: #a895ff; }
+    .left-nav hr { margin: 14px 4px; border-color: #303440; }
+    .left-nav .nav-label { margin: 0 10px 7px; color: #969baa; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .left-nav .saved-builds { margin-top: 16px; }
+    .saved-build-list { margin: 0; padding: 0; list-style: none; }
+    .saved-build-list li, .saved-build-list button { margin: 0; }
+    .saved-build-list button { display: block; width: 100%; overflow: hidden; background: transparent; border: 0; color: #c7c9d0; padding: 4px 10px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+    .saved-build-list button:hover { background: #292c37; box-shadow: none; transform: none; }
+    .workspace-main, .workspace-main > *, .workspace-footer, .output-card { min-width: 0; }
+    .build-sidebar { min-width: 280px; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; padding: 18px; background: #191b23; border: 1px solid #303440; border-radius: 12px; box-shadow: 0 10px 28px #0002; }
+    .summary-toggle { display: none; }
+    .build-sidebar h2 { margin: 0; font-size: 1rem; }
+    .build-sidebar h3 { margin: 20px 0 8px; color: #c7c9d0; font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; }
+    .summary-status { margin-top: 6px; color: #969baa; font-size: .8rem; }
+    .summary-status.valid { color: #69db7c; }
+    .summary-status.invalid { color: #ff9696; }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+    .stat-card { min-width: 0; padding: 10px; background: #20232b; border: 1px solid #343940; border-radius: 8px; }
+    .stat-card span { display: block; color: #969baa; font-size: .68rem; white-space: nowrap; }
+    .stat-card strong { display: block; margin-top: 3px; font-size: 1.05rem; }
+    .summary-affixes { display: grid; gap: 8px; max-height: 270px; overflow-y: auto; padding-right: 4px; }
+    .summary-affix { padding: 8px 10px; background: #20232b; border-left: 3px solid #8b6cff; border-radius: 5px; font-size: .78rem; }
+    .summary-affix strong, .summary-affix span { display: block; min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+    .summary-affix span { margin-top: 3px; color: #b9bcc4; }
+    .summary-requirements { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 12px; margin: 0; color: #b9bcc4; font-size: .82rem; }
+    .summary-requirements dt, .summary-requirements dd { margin: 0; }
+    .summary-requirements dd { min-width: 0; overflow-wrap: anywhere; color: #fff; font-weight: 700; text-align: right; }
+    .summary-requirements dd small { display: block; min-width: 0; margin-top: 3px; overflow-wrap: anywhere; font-size: .7rem; font-weight: 600; white-space: normal; }
+    .summary-action { margin-top: 20px; padding-top: 14px; border-top: 1px solid #303440; }
+    .summary-action button { width: 100%; }
+    .summary-action small { display: block; min-height: 1.2em; margin-top: 7px; color: #ff9696; font-size: .76rem; }
+    .summary-save-name { display: block; margin-top: 10px; font-size: .78rem; }
+    .summary-save-name input { width: 100%; margin-top: 5px; }
+    .summary-result-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .summary-result-actions[hidden] { display: none; }
+    .summary-result-actions button { flex: 1; padding: 7px 6px; font-size: .74rem; }
+    .affix-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-bottom: 14px; }
+    .affix-search { flex: 1 1 220px; min-width: 180px; }
+    .affix-tools label { font-size: .78rem; }
+    .affix-tools input[type="search"] { width: 100%; margin-top: 5px; }
+    .category-filters { display: flex; gap: 5px; }
+    .category-filters button { padding: 7px 10px; font-size: .76rem; }
+    .category-filters button.active { background: #8b6cff; border-color: #a895ff; }
+    .selected-toggle { flex-direction: row !important; align-items: center; gap: 6px !important; white-space: nowrap; }
+    .affix-category[hidden], .affix[hidden] { display: none; }
+    .affix-category-list .affix.selected { margin: 2px -8px; padding: 8px; background: #292c37; border-left: 3px solid #8b6cff; border-radius: 5px; }
+    .affix-category-list .affix.selected .affix-name { color: #fff; }
+    .affix-tooltip { z-index: 30; }
+    .execute-row { scroll-margin-top: 18px; }
+    .output-card { min-width: 0; overflow: hidden; scroll-margin-top: 18px; }
+    .result-overview { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #303440; }
+    .result-overview strong { display: block; font-size: 1rem; }
+    .result-overview span { color: #969baa; font-size: .8rem; }
+    @media (max-width: 1349px) {
+      .workspace { grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; }
+      .build-sidebar { top: 12px; }
+    }
+    @media (max-width: 1000px) {
+      .workspace { grid-template-columns: minmax(0, 1fr) 280px; }
+    }
+    @media (max-width: 760px) {
+      html { scroll-behavior: auto; }
+      .workspace { display: block; padding-bottom: 115px; }
+      .left-nav { position: sticky; z-index: 5; top: 0; margin: -18px -12px 14px; border-width: 0 0 1px; border-radius: 0; background: #191b23ee; backdrop-filter: blur(10px); }
+      .left-nav a[data-section]::after { content: attr(data-label); font-size: .76rem; }
+      .build-sidebar { min-width: 0; position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; padding: 8px 12px; border-width: 1px 0 0; border-radius: 12px 12px 0 0; }
+      .summary-toggle { display: block; width: 100%; margin: 0 0 6px; padding: 4px; background: transparent; border: 0; color: #c7c9d0; font-size: .76rem; }
+      .summary-toggle:hover { background: transparent; box-shadow: none; transform: none; }
+      .summary-details { display: none; max-height: 55vh; overflow: auto; padding: 4px 0 10px; }
+      .build-sidebar.expanded .summary-details { display: block; }
+      .build-sidebar.expanded { padding-top: 10px; }
+      .build-sidebar .stat-grid { margin-top: 8px; }
+      .build-sidebar h3 { margin-top: 12px; }
+      .summary-action { margin-top: 8px; padding-top: 8px; }
+      .summary-result-actions { display: none; }
+      .affix-tools { align-items: stretch; }
+      .affix-search { flex-basis: 100%; }
+      .category-filters { overflow-x: auto; }
+      .category-filters button { flex: none; }
+      .result-overview { align-items: stretch; flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
   </style>
 <script defer src="https://cloud.umami.is/script.js" data-website-id="8cab2508-a215-4c59-85f9-90004ad58d6e"></script><script src="web-adapter.js"></script></head>
-<body class="help-mode" data-theme="dark">
+<body class="help-mode" data-theme="dark" data-page="optimizer">
 <main class="container">
   <header class="app-header">
     <div>
@@ -319,21 +443,47 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-08-12T23:23:50Z</small>
+      <small>Build 2026-08-15T21:09:01Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
-        <button id="export-storage" class="outline secondary" type="button">Export Site Data</button>
-        <button id="import-storage" class="outline secondary" type="button">Import Site Data</button>
-        <button id="help-toggle" class="outline secondary" type="button" aria-expanded="true">Disable Help</button>
+        <button id="help-toggle" class="outline secondary" type="button" aria-expanded="true">Help</button>
+        <details class="header-menu">
+          <summary aria-label="More settings">⋯</summary>
+          <div>
+            <button id="export-storage" class="outline secondary" type="button">Export Site Data</button>
+            <button id="import-storage" class="outline secondary" type="button">Import Site Data</button>
+            <a href="#issue-report">Report an issue</a>
+          </div>
+        </details>
       </div>
-      <div class="help-note header-help"><strong>Export Site Data:</strong> Downloads this site's session and saved results. <strong>Import Site Data:</strong> Restores a previous export.</div>
-      <a class="issue-jump" href="#issue-report">Help us improve — check the bottom ↘</a>
+      <div class="help-note header-help">Help text is available beside the controls. Use the menu for site data import and export.</div>
     </div>
   </header>
+  <nav class="page-tabs" role="tablist" aria-label="Pages">
+    <button class="page-tab active" data-page-tab="optimizer" role="tab" type="button" aria-selected="true">Optimizer</button>
+    <button class="page-tab" data-page-tab="comparison" role="tab" type="button" aria-selected="false">Comparison</button>
+  </nav>
   <input id="import-storage-file" type="file" accept="application/json" hidden>
-  <article class="section-card">
+  <div class="workspace">
+  <aside class="left-nav" aria-label="Build navigation">
+    <div class="nav-label">Build</div>
+    <a href="#equipment" data-section="equipment" data-label="Equipment" data-state="current" aria-current="step">Equipment</a>
+    <a href="#affixes-section" data-section="affixes-section" data-label="Affixes">Affixes</a>
+    <a href="#results" data-section="results" data-label="Results">Results</a>
+    <hr>
+    <a href="#import">Import build</a>
+    <a href="#saved-builds">Saved builds</a>
+    <div id="saved-builds" class="saved-builds">
+      <div class="nav-label">Saved builds</div>
+      <ul id="saved-build-list" class="saved-build-list"><li class="search-footer">None yet</li></ul>
+    </div>
+    <hr>
+    <a href="#issue-report">Feedback</a>
+  </aside>
+  <div class="workspace-main">
+  <article id="import" class="section-card">
     <header class="section-header">
       <div><small class="kicker">Quick start</small><h2>Import Existing Equipment</h2><p>Use a Build Code or load a saved result.</p></div>
-      <small class="section-tag">STEP 0 (OPTIONAL)</small>
+      <small class="section-tag">OPTIONAL</small>
     </header>
     <div class="code-controls">
       <label for="import-code-input">Build Code</label>
@@ -351,10 +501,17 @@
       <div class="help-note">Select a saved result to load it, or delete it.</div>
     </div>
   </article>
-  <article class="section-card">
+  <article id="equipment-comparer" class="section-card comparer-section comparison-page-section">
+    <header class="section-header">
+      <div><small class="kicker">Compare builds</small><h2>Equipment Comparer</h2><p>Load up to four build codes to compare stats and affixes.</p></div>
+      <button id="comparer-add" class="outline secondary" type="button">Add column</button>
+    </header>
+    <div id="comparer-table-wrap" class="comparer-table-wrap"></div>
+  </article>
+  <article id="equipment" class="section-card">
     <header class="section-header">
       <div><small class="kicker">Search setup</small><h2>Equipment filters</h2><p>Choose the class, weapon, rarity, and accessory attributes.</p></div>
-      <small class="section-tag">STEP 1</small>
+      <small class="section-tag">BUILD SETUP</small>
     </header>
     <section class="controls">
     <label data-help="Limits equipment to the selected character class.">Class<select id="class"></select></label>
@@ -384,7 +541,13 @@
     <details class="advanced-config">
       <summary>Advanced Configuration</summary>
       <div class="advanced-config-body">
-        <p>Fix exact rarities for individual items, or change which slots are upgraded first. Leave a slot at Any to let the optimizer choose.</p>
+        <p>Fix exact rarities for individual items. Leave a slot at Any to let the optimizer choose.</p>
+        <div class="stat-priority"><strong>Stat priority <span class="priority-hint">(1 = highest priority)</span></strong><ol id="stat-priority-list" aria-label="Stat priority order">
+          <li data-stat="weaponDamage"><span>Weapon Damage</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Weapon Damage up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Weapon Damage down">↓</button></span></li>
+          <li data-stat="attack"><span>Attack</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Attack up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Attack down">↓</button></span></li>
+          <li data-stat="defense"><span>Defense</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Defense up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Defense down">↓</button></span></li>
+          <li data-stat="health"><span>Health</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Health up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Health down">↓</button></span></li>
+        </ol></div>
         <div class="fixed-rarities">
           <label>Weapon Rarity<span class="rarity-select" data-rarity-select><select id="weapon-rarity"></select></span></label>
           <label>Helmet Rarity<span class="rarity-select" data-rarity-select><select id="fixed-helmet"></select></span></label>
@@ -395,53 +558,31 @@
           <label>Necklace Rarity<span class="rarity-select" data-rarity-select><select id="fixed-necklace"></select></span></label>
           <label>Ring Rarity<span class="rarity-select" data-rarity-select><select id="fixed-ring"></select></span></label>
         </div>
-        <div class="priority-config">
-          <div class="priority-heading"><strong>Rarity priority <span class="priority-hint">(1 = highest priority)</span></strong><button id="reset-rarity-priority" class="outline secondary" type="button">Reset</button></div>
-          <small>Slot 1 is upgraded first. Move a slot upward to give it higher priority.</small>
-          <ol id="rarity-priority" class="rarity-priority" aria-label="Rarity priority order"></ol>
-        </div>
       </div>
     </details>
-    <div class="help-note">Choose the filters first. Set the affix levels that you need, then press Execute.</div>
+    <div class="help-note">Choose the filters first. Set the affix levels that you need, then press Find Best Build.</div>
   </article>
-  <article class="section-card affix-section">
+  <article id="affixes-section" class="section-card affix-section">
     <header class="section-header">
       <div><small class="kicker">Target effects</small><h2>Affixes</h2><p>Set equipment and wine levels to define the search.</p></div>
       <button id="reset-affixes" class="outline secondary" type="button">Reset</button>
     </header>
-  <div class="affix-summary" aria-live="polite">
-    <div class="affix-summary-card">
-      <div class="affix-summary-label">Equipment Levels</div>
-      <div id="equipment-level-total" class="affix-summary-value">0</div>
-    </div>
-    <div class="affix-summary-card">
-      <div class="affix-summary-label">Wine Levels</div>
-      <div id="wine-level-total" class="affix-summary-value">0/8</div>
-      <div id="wine-error" class="wine-error" aria-live="polite"></div>
-    </div>
-    <div class="affix-summary-card">
-      <div class="affix-summary-label">Recommendation</div>
-      <div id="affix-observation" class="affix-summary-value" aria-live="polite">Gray/White + Green</div>
-    </div>
+  <div class="affix-tools">
+    <label class="affix-search" for="affix-search">Search affixes<input id="affix-search" type="search" placeholder="Search affixes..." autocomplete="off"></label>
   </div>
-  <div class="help-note">Enter equipment and wine levels. The summary cards show the sum of each column. Wine has a maximum total of 8. The recommendation shows the required rarity range.</div>
+  <div class="help-note">Enter equipment and wine levels. The build summary stays visible while you edit. Wine has a maximum total of 8.</div>
   <div id="affix-notice" class="affix-notice" role="status" aria-live="polite"></div>
   <div id="affixes" class="affixes"></div>
-  <section class="combined">
-    <h3>Combined affixes</h3>
-    <div id="combined-affixes">No affixes selected.</div>
-    <div class="help-note">This section combines equipment and wine levels and shows the current effect text.</div>
-  </section>
   </article>
-  <div class="execute-row">
+  <div id="execute-row" class="execute-row">
     <div><small class="kicker">Ready to search?</small><strong>Find the most affordable matching setup.</strong></div>
       <div class="result-actions">
-        <button id="execute" type="button">Execute</button>
+        <button id="execute-secondary" data-execute type="button">Find Best Build</button>
         <label class="low-performance-toggle"><input id="fill-gem-slots" type="checkbox" checked> Fill Gem Slots</label>
         <label class="low-performance-toggle"><input id="low-performance" type="checkbox"> Low Performance</label>
       </div>
     </div>
-    <div class="help-note execute-help"><strong>Execute:</strong> Starts the search. <strong>Fill Gem Slots:</strong> Uses compatible empty sockets. <strong>Low Performance:</strong> Uses less CPU but takes longer.</div>
+    <div class="help-note execute-help"><strong>Find Best Build:</strong> Starts the search. <strong>Fill Gem Slots:</strong> Uses compatible empty sockets. <strong>Low Performance:</strong> Uses less CPU but takes longer.</div>
   <section class="workspace-footer">
     <div><small class="kicker">Your workspace</small><strong>Save or export your progress</strong><small>Keep a result for later or move it to another device.</small></div>
     <div id="export-code-row" class="workspace-code">
@@ -449,17 +590,16 @@
       <input id="export-code" type="text" placeholder="Generated after Execute" readonly>
       <button id="copy-code" class="outline" type="button">Copy</button>
       <span id="copy-status" class="code-status" aria-live="polite"></span>
-      <div class="help-note">Copy this Build Code to use the generated equipment in-game.</div>
+      <div class="help-note">Copy this Build Code to use in-game.</div>
     </div>
     <div class="workspace-actions">
-      <label for="result-name">Save Result<input id="result-name" placeholder="Result name" aria-label="Result name"></label>
       <button id="save-result" class="outline secondary" type="button" disabled>Save Result</button>
       <span id="save-status" class="code-status" aria-live="polite"></span>
-      <div class="help-note">Save the current successful result. Leave the name blank to create one automatically.</div>
+      <div class="help-note">Enter a build name to save the current successful result.</div>
     </div>
   </section>
-  <article class="output-card">
-    <div id="output">Select affixes and press Execute.</div>
+  <article id="results" class="output-card">
+    <div id="output">Select affixes and press Find Best Build.</div>
   </article>
   <div class="help-note">The output shows validity, prices, affix totals, equipment, gems, search time, and optimization rules.</div>
   <aside id="issue-report" class="issue-report" aria-labelledby="issue-report-title">
@@ -470,6 +610,40 @@
     </div>
     <a class="issue-report-link" href="https://github.com/WdThing/mistfall-hunter-optimizer/issues" target="_blank" rel="noopener noreferrer">Open GitHub Issues <span aria-hidden="true">↗</span></a>
   </aside>
+  </div>
+  <aside class="build-sidebar" aria-labelledby="summary-heading">
+    <button id="summary-toggle" class="summary-toggle" type="button" aria-expanded="false">Build summary ▴</button>
+    <div id="summary-details" class="summary-details">
+      <h2 id="summary-heading">TARGET BUILD</h2>
+      <div id="summary-status" class="summary-status" role="status" aria-live="polite">Configuration valid</div>
+      <div class="stat-grid" aria-label="Build stats">
+        <div class="stat-card"><span>Health</span><strong id="summary-health">-</strong></div>
+        <div class="stat-card"><span>Attack</span><strong id="summary-attack">-</strong></div>
+        <div class="stat-card"><span>Defense</span><strong id="summary-defense">-</strong></div>
+        <div class="stat-card"><span>Stamina</span><strong id="summary-stamina">-</strong></div>
+        <div class="stat-card"><span>Physical Damage</span><strong id="summary-physical-damage">0%</strong></div>
+        <div class="stat-card"><span>Magic Damage</span><strong id="summary-magic-damage">0%</strong></div>
+      </div>
+      <h3>Affix bonuses</h3>
+      <div id="summary-affixes" class="summary-affixes"><div class="search-footer">No affixes selected.</div></div>
+      <h3>Build requirements</h3>
+      <dl class="summary-requirements">
+        <dt>Equipment</dt><dd id="summary-equipment">0 / 0</dd>
+        <dt>Wine</dt><dd><span id="summary-wine">0 / 8</span><small id="wine-error" class="wine-error" aria-live="polite"></small></dd>
+        <dt>Rarity</dt><dd><span id="summary-rarity">—</span><small id="affix-observation" class="affix-observation" aria-live="polite"></small></dd>
+      </dl>
+    </div>
+    <div class="summary-action">
+      <button id="execute" data-execute type="button">Find Best Build</button>
+      <small id="execute-status" role="status" aria-live="polite"></small>
+      <label class="summary-save-name" for="result-name">Build name<input id="result-name" placeholder="Build name (required)" aria-label="Build name"></label>
+      <div id="summary-result-actions" class="summary-result-actions">
+        <button id="summary-copy-code" class="outline" type="button">Copy Build Code</button>
+        <button id="summary-save-result" class="outline secondary" type="button" disabled>Save Build</button>
+      </div>
+    </div>
+  </aside>
+  </div>
 </main>
 <script type="module">
   const Events = window.mistfallWeb
@@ -480,6 +654,16 @@
     : (await import("./bindings/mistfall/v2/index.js")).GUIService;
 
   const $ = id => document.getElementById(id);
+  const pageTabs = [...document.querySelectorAll("[data-page-tab]")];
+  const selectPage = page => {
+    document.body.dataset.page = page;
+    pageTabs.forEach(tab => {
+      const active = tab.dataset.pageTab === page;
+      tab.classList.toggle("active", active);
+      tab.setAttribute("aria-selected", String(active));
+    });
+  };
+  pageTabs.forEach(tab => tab.onclick = () => selectPage(tab.dataset.pageTab));
   const addOptions = (select, values, label = value => value) => {
     for (const value of values) {
       const option = document.createElement("option");
@@ -500,7 +684,7 @@
   const helpToggle = $("help-toggle");
   helpToggle.onclick = () => {
     const open = document.body.classList.toggle("help-mode");
-    helpToggle.textContent = open ? "Disable Help" : "Enable Help";
+    helpToggle.textContent = open ? "Hide Help" : "Show Help";
     helpToggle.setAttribute("aria-expanded", String(open));
     saveSession();
   };
@@ -518,13 +702,23 @@
     addOptions($("weapon-class"), weapons);
     $("weapon-class").value = weapons.includes(selected) ? selected : weapons[0] || "";
   };
-  $("class").onchange = () => updateWeapons();
+  $("class").onchange = () => {
+    invalidateResult();
+    updateWeapons();
+    updateCombined();
+  };
   updateWeapons();
   addOptions($("min-rarity"), options.rarities, rarityLabel);
   addOptions($("max-rarity"), options.rarities, rarityLabel);
   for (const accessory of ["ring", "amulet"]) {
     addOptions($(`${accessory}-primary`), ["Any", "HP", "ATK"]);
     addOptions($(`${accessory}-damage`), ["Any", "PHYS", "MAG"]);
+    for (const part of ["primary", "damage"]) {
+      $(`${accessory}-${part}`).onchange = () => {
+        invalidateResult();
+        updateCombined();
+      };
+    }
   }
   $("min-rarity").value = options.rarities[0];
   $("max-rarity").value = options.rarities.at(-1);
@@ -552,12 +746,14 @@
     updateRarityMarkers();
   };
   $("min-rarity").onchange = () => {
+    invalidateResult();
     if (options.rarities.indexOf($("min-rarity").value) > options.rarities.indexOf($("max-rarity").value)) $("max-rarity").value = $("min-rarity").value;
     updateWeaponRarities($("weapon-rarity").value);
     updateFixedRarities();
     updateCombined();
   };
   $("max-rarity").onchange = () => {
+    invalidateResult();
     if (options.rarities.indexOf($("max-rarity").value) < options.rarities.indexOf($("min-rarity").value)) $("min-rarity").value = $("max-rarity").value;
     updateWeaponRarities($("weapon-rarity").value);
     updateFixedRarities();
@@ -567,9 +763,47 @@
   updateFixedRarities();
   document.querySelectorAll("[data-rarity-select] select").forEach(select => select.addEventListener("change", updateRarityMarkers));
 
+  const defaultStatPriority = ["weaponDamage", "attack", "defense", "health"];
+  const statPriorityList = $("stat-priority-list");
+  const updateStatPriorityButtons = () => {
+    const rows = [...statPriorityList.children];
+    rows.forEach((row, index) => {
+      row.querySelector('[data-stat-move="up"]').disabled = index === 0;
+      row.querySelector('[data-stat-move="down"]').disabled = index === rows.length - 1;
+    });
+  };
+  const applyStatPriority = order => {
+    const valid = Array.isArray(order) && order.length === defaultStatPriority.length && new Set(order).size === order.length && order.every(stat => defaultStatPriority.includes(stat));
+    const rows = new Map([...statPriorityList.children].map(row => [row.dataset.stat, row]));
+    for (const stat of valid ? order : defaultStatPriority) statPriorityList.append(rows.get(stat));
+    updateStatPriorityButtons();
+  };
+  statPriorityList.onclick = event => {
+    const button = event.target.closest("[data-stat-move]");
+    if (!button) return;
+    const row = button.closest("li");
+    const sibling = button.dataset.statMove === "up" ? row.previousElementSibling : row.nextElementSibling;
+    if (!sibling) return;
+    statPriorityList.insertBefore(button.dataset.statMove === "up" ? row : sibling, button.dataset.statMove === "up" ? sibling : row);
+    updateStatPriorityButtons();
+    invalidateResult();
+    updateCombined();
+    saveSession();
+  };
+  applyStatPriority();
+
   let lastResult = null;
+  let importedBuild = null;
+  let configurationChanged = false;
   let optimizing = false;
   let affixNoticeTimer;
+  const executeButtons = () => [...document.querySelectorAll("[data-execute]")];
+  const summaryToggle = $("summary-toggle");
+  summaryToggle.onclick = () => {
+    const open = summaryToggle.closest(".build-sidebar").classList.toggle("expanded");
+    summaryToggle.setAttribute("aria-expanded", String(open));
+    summaryToggle.textContent = open ? "Hide build summary ▾" : "Build summary ▴";
+  };
   const showAffixNotice = message => {
     const notice = $("affix-notice");
     notice.textContent = message;
@@ -586,6 +820,340 @@
     const status = $(id);
     status.textContent = message;
     status.className = `code-status ${success ? "success" : "failure"}`;
+  };
+  const updateSaveState = () => {
+    const canSave = !!$("result-name").value.trim() && !!lastResult?.possible && !lastResult.closest;
+    $("save-result").disabled = !canSave;
+    $("summary-save-result").disabled = !canSave;
+  };
+  $("result-name").oninput = updateSaveState;
+  const invalidateResult = () => {
+    configurationChanged = true;
+    if (!lastResult) {
+      updateSaveState();
+      return;
+    }
+    lastResult = null;
+    updateSaveState();
+    setExportedCode("");
+    $("output").className = "";
+    $("output").textContent = "Configuration changed. Press Find Best Build.";
+  };
+  const clampAffixInput = input => {
+    const min = Number(input.min || 0);
+    const max = Number(input.max || Infinity);
+    const value = Number(input.value);
+    input.value = String(Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : min);
+  };
+  const statEffects = {
+    Health: { key: "health", pattern: /Maximum Health\s*\+\s*([\d.]+)(%?)/g },
+    Attack: { key: "attack", pattern: /Attack\s*\+\s*([\d.]+)(%?)/g },
+    Defense: { key: "defense", pattern: /Defense(?!\s+Penetration)\s*\+\s*([\d.]+)(%?)/g },
+    Stamina: { key: "stamina", pattern: /Maximum Energy\s*\+\s*([\d.]+)(%?)/g },
+    "Physical Damage": { key: "physicalDamage", id: "physical-damage", base: 0, percentValue: true, pattern: /Physical Damage\s*\+\s*([\d.]+)(%?)/g },
+    "Magic Damage": { key: "magicDamage", id: "magic-damage", base: 0, percentValue: true, pattern: /Magic Damage\s*\+\s*([\d.]+)(%?)/g }
+  };
+  const formatStat = value => Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
+  const calculatedStats = (affixes, result, className = $("class").value) => {
+    const bonuses = Object.fromEntries(Object.keys(statEffects).map(name => [name, { flat: 0, percent: 0 }]));
+    const pieceAttributes = {
+      Health: { keys: ["maxHealth"], scale: 1 },
+      Attack: { keys: ["attack"], scale: 1 },
+      Defense: { keys: ["defence", "defense"], scale: 1 },
+      Stamina: { keys: ["maxEnergy", "maxStamina", "stamina"], scale: 1 },
+      "Physical Damage": { keys: ["physicalIncrease", "physicalDamage"], scale: 100 },
+      "Magic Damage": { keys: ["magicalIncrease", "magicIncrease", "magicalDamage", "magicDamage"], scale: 100 }
+    };
+    for (const piece of result?.sets?.[0]?.pieces || []) {
+      for (const [name, { keys, scale }] of Object.entries(pieceAttributes)) {
+        for (const key of keys) {
+          const value = Number(piece.attributes?.[key]);
+          if (Number.isFinite(value)) {
+            bonuses[name].flat += value * scale;
+            break;
+          }
+        }
+      }
+    }
+    for (const affix of affixes) {
+      const details = options.affixDetails[affix.name];
+      const level = Math.min(Number(affix.level || 0), Math.max(...Object.keys(details?.levels || {}).map(Number), 0));
+      const effect = details?.levels?.[String(level)] || "";
+      for (const [name, { pattern }] of Object.entries(statEffects)) {
+        for (const match of effect.matchAll(new RegExp(pattern.source, pattern.flags))) {
+          bonuses[name][match[2] ? "percent" : "flat"] += Number(match[1]);
+        }
+      }
+    }
+    return Object.fromEntries(Object.entries(statEffects).map(([name, { key }]) => {
+      const base = statEffects[name].base ?? options.classStats?.[className]?.[key];
+      if (base == null) return [name, "-"];
+      const { flat, percent } = bonuses[name];
+      const value = formatStat(statEffects[name].percentValue ? Number(base) + flat + percent : (Number(base) + flat) * (1 + percent / 100));
+      return [name, statEffects[name].percentValue ? `${value}%` : value];
+    }));
+  };
+  const summaryAffixes = result => result?.sets?.[0]
+    ? (result.sets[0].affixes || []).filter(affix => Number(affix.result || affix.target || 0) + Number(affix.wine || 0) > 0).map(affix => ({ name: affix.name, level: Number(affix.result || affix.target || 0) + Number(affix.wine || 0), target: Number(affix.target || 0) + Number(affix.wine || 0) }))
+    : affixValues().filter(affix => !affix.blocked && affix.level + affix.wine > 0).map(affix => ({ ...affix, level: affix.level + affix.wine }));
+  const comparerBuilds = [
+    { code: "", session: null, error: "", dirty: false },
+    { code: "", session: null, error: "", dirty: false }
+  ];
+  const comparerTooltip = document.createElement("div");
+  comparerTooltip.className = "comparer-tooltip";
+  document.body.append(comparerTooltip);
+  const comparerTooltipText = new WeakMap();
+  const hideComparerTooltip = () => comparerTooltip.classList.remove("visible");
+  const showComparerTooltip = target => {
+    const text = comparerTooltipText.get(target);
+    if (!text) return;
+    comparerTooltip.textContent = text;
+    comparerTooltip.classList.add("visible");
+    const margin = 16;
+    const gap = 8;
+    const rect = target.getBoundingClientRect();
+    const width = comparerTooltip.offsetWidth;
+    const height = comparerTooltip.offsetHeight;
+    const left = Math.min(Math.max(margin, rect.left), window.innerWidth - width - margin);
+    const below = rect.bottom + gap;
+    const top = below + height <= window.innerHeight - margin ? below : Math.max(margin, rect.top - height - gap);
+    comparerTooltip.style.left = `${left}px`;
+    comparerTooltip.style.top = `${top}px`;
+  };
+  window.addEventListener("scroll", hideComparerTooltip, true);
+  window.addEventListener("resize", hideComparerTooltip);
+  const comparerStatus = build => {
+    if (build.error) return { text: "Load failed", className: "invalid" };
+    if (build.dirty) return { text: "Code changed — load again", className: "empty" };
+    const result = build.session?.result;
+    if (!result) return { text: "Not loaded", className: "empty" };
+    if (!result.possible) return { text: "Invalid build", className: "invalid" };
+    if (result.closest) return { text: "Closest build", className: "invalid" };
+    return { text: result.rules?.includes("Imported native build code") ? "Loaded build" : "Valid build", className: "valid" };
+  };
+  const comparerInfo = build => {
+    const result = build.session?.result;
+    const set = result?.sets?.[0];
+    const affixes = summaryAffixes(result);
+    const stats = result ? calculatedStats(affixes, result, build.session?.request?.characterClass) : {};
+    const rarities = [...new Set((set?.pieces || []).map(piece => piece.rarity).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    return { result, set, affixes, stats, rarities };
+  };
+  function renderComparer() {
+    const wrap = $("comparer-table-wrap");
+    const columns = [
+      { label: "Current Result", build: { session: lastResult ? { result: lastResult, request: { characterClass: $("class").value, weaponClass: $("weapon-class").value } } : null }, current: true },
+      ...comparerBuilds.map((build, index) => ({ label: `Build ${index + 1}`, build, index }))
+    ];
+    const table = document.createElement("table");
+    table.className = "comparer-table";
+    const head = table.createTHead().insertRow();
+    const label = document.createElement("th");
+    label.scope = "col";
+    label.textContent = "Metric";
+    head.append(label);
+    for (const column of columns) {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = column.label;
+      if (!column.current && comparerBuilds.length > 1) {
+        const remove = document.createElement("button");
+        remove.className = "comparer-remove outline secondary";
+        remove.type = "button";
+        remove.textContent = "Remove";
+        remove.onclick = () => {
+          comparerBuilds.splice(column.index, 1);
+          renderComparer();
+        };
+        cell.append(remove);
+      }
+      head.append(cell);
+    }
+    const body = table.createTBody();
+    const addRow = (name, renderCell) => {
+      const row = body.insertRow();
+      const heading = document.createElement("th");
+      heading.scope = "row";
+      heading.textContent = name;
+      row.append(heading);
+      for (const column of columns) renderCell(row.insertCell(), column.build, column);
+      return row;
+    };
+    const emptyCurrent = column => column.current && !column.build.session?.result;
+    addRow("Build code", (cell, build, column) => {
+      if (column.current) return;
+      const index = column.index;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.value = build.code;
+      input.placeholder = "Paste build code";
+      input.ariaLabel = `Build ${index + 1} code`;
+      input.oninput = () => {
+        build.code = input.value;
+        build.dirty = !!build.session;
+      };
+      const button = document.createElement("button");
+      button.className = "outline";
+      button.type = "button";
+      button.textContent = "Load";
+      button.onclick = async () => {
+        const code = input.value.trim();
+        if (!code) return;
+        build.code = code;
+        build.session = null;
+        build.error = "";
+        build.dirty = false;
+        button.disabled = true;
+        button.textContent = "Loading…";
+        try {
+          build.session = await GUIService.ImportCode(code);
+        } catch (error) {
+          build.error = String(error);
+        }
+        renderComparer();
+      };
+      const content = document.createElement("div");
+      content.className = "comparer-code";
+      content.append(input, button);
+      if (build.error) {
+        const error = document.createElement("span");
+        error.className = "comparer-detail comparer-status invalid";
+        error.textContent = build.error;
+        content.append(error);
+      }
+      cell.append(content);
+    });
+    addRow("Status", (cell, build, column) => {
+      if (emptyCurrent(column)) return;
+      const status = comparerStatus(build);
+      const text = document.createElement("span");
+      text.className = `comparer-status ${status.className}`;
+      text.textContent = status.text;
+      cell.append(text);
+    });
+    for (const name of ["Class", "Weapon"]) {
+      addRow(name, (cell, build, column) => {
+        if (emptyCurrent(column)) return;
+        cell.textContent = build.session?.request?.[name === "Class" ? "characterClass" : "weaponClass"] || "—";
+      });
+    }
+    for (const name of Object.keys(statEffects)) {
+      addRow(name, (cell, build, column) => {
+        if (emptyCurrent(column)) return;
+        cell.textContent = comparerInfo(build).stats[name] || "—";
+      });
+    }
+    addRow("Equipment", (cell, build, column) => {
+      if (emptyCurrent(column)) return;
+      const count = comparerInfo(build).set?.pieces?.length;
+      cell.textContent = count == null ? "—" : `${count} pieces`;
+    });
+    addRow("Wine", (cell, build, column) => {
+      if (!emptyCurrent(column)) cell.textContent = "—";
+    });
+    addRow("Rarity", (cell, build, column) => {
+      if (emptyCurrent(column)) return;
+      cell.textContent = comparerInfo(build).rarities.join(" / ") || "—";
+    });
+    const names = [...new Set(columns.flatMap(column => comparerInfo(column.build).affixes.map(affix => affix.name)))]
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+    if (!names.length) {
+      const row = body.insertRow();
+      const cell = row.insertCell();
+      cell.colSpan = columns.length + 1;
+      cell.className = "search-footer";
+      cell.textContent = "Load build codes to compare affixes.";
+    } else {
+      for (const name of names) {
+        const row = addRow(name, (cell, build, column) => {
+          if (emptyCurrent(column)) return;
+          const affix = comparerInfo(build).affixes.find(item => item.name === name);
+          if (!affix) {
+            cell.textContent = "—";
+            cell.className = "comparer-affix-level missing";
+            return;
+          }
+          const level = document.createElement("strong");
+          level.className = "comparer-affix-level";
+          level.textContent = `Lv. ${affix.level}`;
+          const status = document.createElement("span");
+          status.className = "comparer-affix-status";
+          status.textContent = affix.target ? `${affix.level >= affix.target ? "✓" : "✗"} Target ${affix.target}` : "Bonus";
+          cell.append(level, status);
+        });
+        const details = options.affixDetails[name];
+        const bonuses = Object.entries(details?.levels || {})
+          .sort(([a], [b]) => Number(a) - Number(b))
+          .map(([level, bonus]) => `Level ${level}: ${bonus}`);
+        const tooltip = [details?.description, ...bonuses].filter(Boolean).join("\n\n");
+        const heading = row.querySelector("th");
+        heading.classList.add("comparer-affix-name");
+        comparerTooltipText.set(heading, tooltip);
+        heading.addEventListener("mouseenter", () => showComparerTooltip(heading));
+        heading.addEventListener("mouseleave", hideComparerTooltip);
+      }
+    }
+    wrap.replaceChildren(table);
+    $("comparer-add").disabled = comparerBuilds.length >= 4;
+  }
+  $("comparer-add").onclick = () => {
+    if (comparerBuilds.length >= 4) return;
+    comparerBuilds.push({ code: "", session: null, error: "", dirty: false });
+    renderComparer();
+  };
+  function updateBuildSummary(result = null) {
+    const current = affixValues().filter(affix => !affix.blocked);
+    const summaryResult = result || importedBuild;
+    const affixes = summaryAffixes(summaryResult);
+    const stats = calculatedStats(affixes, summaryResult);
+    for (const name of Object.keys(statEffects)) {
+      $(`summary-${statEffects[name].id || name.toLowerCase()}`).textContent = stats[name];
+    }
+    $("summary-heading").textContent = result ? "OPTIMIZED BUILD" : "TARGET BUILD";
+    const status = $("summary-status");
+    const invalid = result && (!result.possible || result.closest);
+    status.textContent = invalid ? "No exact build found" : result ? "Optimized build ready" : configurationChanged ? "Configuration changed" : "Configuration valid";
+    status.className = `summary-status ${invalid ? "invalid" : result ? "valid" : ""}`;
+    const summary = $("summary-affixes");
+    summary.replaceChildren();
+    if (!affixes.length) {
+      summary.innerHTML = '<div class="search-footer">No affixes selected.</div>';
+    } else {
+      for (const affix of affixes) {
+        const details = options.affixDetails[affix.name];
+        const max = Math.max(...Object.keys(details?.levels || {}).map(Number), 0);
+        const item = document.createElement("div");
+        item.className = "summary-affix";
+        const heading = document.createElement("strong");
+        heading.textContent = `${affix.name} — Lv. ${affix.level}`;
+        const effect = document.createElement("span");
+        effect.textContent = details?.levels?.[String(Math.min(affix.level, max))] || "";
+        item.append(heading, effect);
+        summary.append(item);
+      }
+    }
+    const equipment = current.reduce((total, affix) => total + affix.level, 0);
+    $("summary-equipment").textContent = `${equipment} / ${fullSetAffixSlots[$("max-rarity").value] ?? 0}`;
+    $("summary-wine").textContent = `${current.reduce((total, affix) => total + affix.wine, 0)} / 8`;
+    $("summary-rarity").textContent = `${$("min-rarity").value || "—"} → ${$("max-rarity").value || "—"}`;
+    $("summary-result-actions").hidden = !result?.possible || !!result.closest;
+  }
+  const setExecuteState = (disabled, reason = "") => {
+    for (const button of executeButtons()) {
+      button.disabled = disabled;
+      button.setAttribute("aria-disabled", String(disabled));
+    }
+    $("execute-status").textContent = reason;
+  };
+  const updateNavState = () => {
+    const affixError = $("wine-error").textContent || $("affix-observation").classList.contains("impossible");
+    const states = {
+      equipment: $("class").value && $("weapon-class").value && $("min-rarity").value && $("max-rarity").value ? "complete" : "error",
+      "affixes-section": affixError ? "error" : document.querySelector(".affix.selected") ? "complete" : "current",
+      results: lastResult ? (lastResult.possible && !lastResult.closest ? "complete" : "error") : "current"
+    };
+    for (const [section, state] of Object.entries(states)) document.querySelector(`[data-section="${section}"]`).dataset.state = state;
   };
 
   Events.On("optimization-progress", event => {
@@ -619,6 +1187,7 @@
       const details = options.affixDetails[name];
       const row = document.createElement("div");
       row.className = "affix";
+      row.dataset.category = category;
       const tooltip = document.createElement("div");
       tooltip.className = "affix-tooltip";
       const description = document.createElement("div");
@@ -631,10 +1200,21 @@
         levels.append(effect);
       }
       tooltip.append(description, levels);
-      const label = document.createElement("label");
+      const label = document.createElement("div");
+      label.className = "affix-name-label";
       const icon = createIcon(details.iconB64, "affix-icon");
       if (icon) label.append(icon);
-      label.append(name);
+      const nameText = document.createElement("span");
+      nameText.className = "affix-name";
+      nameText.textContent = name;
+      const block = document.createElement("input");
+      block.type = "checkbox";
+      block.dataset.kind = "block";
+      block.ariaLabel = `Block ${name}`;
+      const blockLabel = document.createElement("label");
+      blockLabel.className = "affix-block";
+      blockLabel.append(block, "Block");
+      label.append(nameText, blockLabel);
       const equipment = document.createElement("input");
       equipment.type = "number";
       equipment.min = "0";
@@ -650,16 +1230,59 @@
       wine.value = "0";
       wine.dataset.kind = "wine";
       wine.ariaLabel = `${name} wine level`;
-      equipment.oninput = () => updateCombined(equipment);
-      wine.oninput = () => updateCombined(wine);
+      for (const input of [equipment, wine]) {
+        input.onkeydown = event => {
+          const delta = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1 }[event.key];
+          if (!delta) return;
+          event.preventDefault();
+          clampAffixInput(input);
+          input.value = String(Math.min(Number(input.max), Math.max(Number(input.min), Number(input.value) + delta)));
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+        };
+      }
+      equipment.oninput = () => {
+        invalidateResult();
+        updateCombined(equipment);
+      };
+      wine.oninput = () => {
+        invalidateResult();
+        updateCombined(wine);
+      };
+      block.onchange = () => {
+        invalidateResult();
+        updateCombined();
+      };
       row.append(label, equipment, wine, tooltip);
       row.dataset.name = name;
       list.append(row);
     }
   }
 
+  let affixCategory = "All";
+  const filterAffixes = () => {
+    const query = $("affix-search").value.trim().toLowerCase();
+    for (const category of document.querySelectorAll(".affix-category")) {
+      let visible = 0;
+      for (const row of category.querySelectorAll(".affix")) {
+        const matches = (!query || row.dataset.name.toLowerCase().includes(query))
+          && (affixCategory === "All" || row.dataset.category === affixCategory);
+        row.hidden = !matches;
+        visible += matches;
+      }
+      category.hidden = !visible;
+    }
+  };
+  $("affix-search").oninput = filterAffixes;
+  document.querySelectorAll("[data-affix-category]").forEach(button => button.onclick = () => {
+    affixCategory = button.dataset.affixCategory;
+    document.querySelectorAll("[data-affix-category]").forEach(item => item.classList.toggle("active", item === button));
+    filterAffixes();
+  });
+
   function applyImportedAffixes(set) {
     if (!set) return;
+    importedBuild = { possible: true, sets: [set] };
+    invalidateResult();
     const levels = new Map();
     const add = (name, level = 1) => {
       if (options.affixes.includes(name)) levels.set(name, (levels.get(name) || 0) + level);
@@ -680,113 +1303,73 @@
     updateCombined();
   }
 
-  const defaultRarityPriority = ["weapon", "gauntlets", "boots", "clothes", "pants", "helmet", "necklace", "ring"];
-  const priorityLabels = { weapon: "Weapon", helmet: "Helmet", clothes: "Clothes", gauntlets: "Gauntlets", pants: "Pants", boots: "Boots", necklace: "Necklace", ring: "Ring" };
-  const priorityList = $("rarity-priority");
-  const updatePriorityButtons = () => {
-    const rows = [...priorityList.children];
-    rows.forEach((row, index) => {
-      row.querySelector("[data-move=up]").disabled = index === 0;
-      row.querySelector("[data-move=down]").disabled = index === rows.length - 1;
-    });
-  };
-  const renderRarityPriority = order => {
-    priorityList.replaceChildren();
-    for (const slot of order) {
-      const row = document.createElement("li");
-      row.className = "rarity-priority-item";
-      row.dataset.slot = slot;
-      const name = document.createElement("span");
-      name.textContent = priorityLabels[slot];
-      const actions = document.createElement("span");
-      actions.className = "priority-actions";
-      for (const [direction, symbol] of [["up", "↑"], ["down", "↓"]]) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.dataset.move = direction;
-        button.textContent = symbol;
-        button.ariaLabel = `${direction === "up" ? "Move" : "Move"} ${priorityLabels[slot]} ${direction}`;
-        button.onclick = () => {
-          const sibling = direction === "up" ? row.previousElementSibling : row.nextElementSibling;
-          if (!sibling) return;
-          priorityList.insertBefore(direction === "up" ? row : sibling, direction === "up" ? sibling : row);
-          updatePriorityButtons();
-          saveSession();
-        };
-        actions.append(button);
-      }
-      row.append(name, actions);
-      priorityList.append(row);
-    }
-    updatePriorityButtons();
-  };
-  const applyRarityPriority = order => {
-    const valid = Array.isArray(order) && order.length === defaultRarityPriority.length && new Set(order).size === order.length && order.every(slot => defaultRarityPriority.includes(slot));
-    renderRarityPriority(valid ? order : defaultRarityPriority);
-  };
-  applyRarityPriority();
-  $("reset-rarity-priority").onclick = () => {
-    applyRarityPriority();
-    saveSession();
-  };
-
   function applySession(session, restoreHelp = true, preserveWine = false) {
+    importedBuild = null;
     if (restoreHelp) {
       const open = session.help ?? true;
       document.body.classList.toggle("help-mode", open);
-      helpToggle.textContent = open ? "Disable Help" : "Enable Help";
+      helpToggle.textContent = open ? "Hide Help" : "Show Help";
       helpToggle.setAttribute("aria-expanded", String(open));
     }
-    if (!session.request) {
+    if (!session.request && !session.result) {
       lastResult = null;
       setExportedCode("");
-      $("save-result").disabled = true;
+      updateSaveState();
+      updateBuildSummary();
       return;
     }
-    if (session.request) {
-      const request = session.request;
-      if (request.characterClass) {
-        $("class").value = request.characterClass;
-        updateWeapons(request.weaponClass);
-      }
-      if (request.minRarity) $("min-rarity").value = options.rarities.includes(request.minRarity) ? request.minRarity : options.rarities[0];
-      if (request.maxRarity) $("max-rarity").value = options.rarities.includes(request.maxRarity) ? request.maxRarity : options.rarities.at(-1);
-      const fixedRarities = request.fixedRarities || {};
-      updateWeaponRarities(fixedRarities.weapon || request.weaponRarity);
-      updateFixedRarities(fixedRarities);
-      applyRarityPriority(request.rarityPriority);
-      $("fill-gem-slots").checked = request.fillGemSlots !== false;
-      $("low-performance").checked = !!request.lowPerformance;
-      for (const accessory of ["ring", "amulet"]) {
-        const value = request[accessory] || "Any";
-        const parts = value === "Any" ? [] : value.split("/");
-        $(`${accessory}-primary`).value = parts[0] || "Any";
-        $(`${accessory}-damage`).value = parts[1] || "Any";
-      }
-      const savedAffixes = new Map((request.affixes || []).map(affix => [affix.name, affix]));
-      for (const row of document.querySelectorAll(".affix")) {
-        const affix = savedAffixes.get(row.dataset.name);
-        const equipment = row.querySelector('[data-kind="equipment"]');
-        const wine = row.querySelector('[data-kind="wine"]');
-        equipment.value = String(affix && affix.enabled !== false ? affix.level || 0 : 0);
-        if (!preserveWine) wine.value = String(affix?.wine || 0);
-      }
-      lastResult = null;
-      setExportedCode("");
-      const savedResult = session.hasResult || session.result?.possible ? session.result : null;
-      if (savedResult) {
-        try {
-          render(savedResult);
-          lastResult = savedResult;
-          setExportedCode(savedResult.possible && !savedResult.closest ? savedResult.sets?.[0]?.code : "");
-        } catch (error) {
-          $("output").className = "error";
-          $("output").textContent = `Saved result is incompatible: ${error}. Configuration and affixes loaded; press Execute to optimize again.`;
-        }
-      }
-      $("save-result").disabled = !lastResult?.possible;
-      updateCombined();
+    const request = session.request || {};
+    applyStatPriority(request.statPriority);
+    const ruleValue = prefix => (session.result?.rules || []).find(rule => rule.startsWith(prefix))?.slice(prefix.length) || "";
+    const savedClass = request.characterClass || ruleValue("Class: ");
+    const [savedMinRarity, savedMaxRarity] = (ruleValue("Rarity: ") || "").split("–");
+    if (savedClass) {
+      $("class").value = savedClass;
+      updateWeapons(request.weaponClass || ruleValue("Weapon: "));
     }
+    if (request.minRarity || savedMinRarity) $("min-rarity").value = options.rarities.includes(request.minRarity || savedMinRarity) ? request.minRarity || savedMinRarity : options.rarities[0];
+    if (request.maxRarity || savedMaxRarity) $("max-rarity").value = options.rarities.includes(request.maxRarity || savedMaxRarity) ? request.maxRarity || savedMaxRarity : options.rarities.at(-1);
+    const fixedRarities = request.fixedRarities || {};
+    updateWeaponRarities(fixedRarities.weapon || request.weaponRarity);
+    updateFixedRarities(fixedRarities);
+    $("fill-gem-slots").checked = request.fillGemSlots !== false;
+    $("low-performance").checked = !!request.lowPerformance;
+    for (const accessory of ["ring", "amulet"]) {
+      const value = request[accessory] || "Any";
+      const parts = value === "Any" ? [] : value.split("/");
+      $(`${accessory}-primary`).value = parts[0] || "Any";
+      $(`${accessory}-damage`).value = parts[1] || "Any";
+    }
+    const resultAffixes = session.result?.sets?.[0]?.affixes || [];
+    const savedAffixes = new Map((request.affixes?.length ? request.affixes : resultAffixes.map(affix => ({
+      ...affix,
+      level: affix.target || affix.result || 0,
+      enabled: true
+    }))).map(affix => [affix.name, affix]));
+    for (const row of document.querySelectorAll(".affix")) {
+      const affix = savedAffixes.get(row.dataset.name);
+      const equipment = row.querySelector('[data-kind="equipment"]');
+      const wine = row.querySelector('[data-kind="wine"]');
+      const block = row.querySelector('[data-kind="block"]');
+      equipment.value = String(affix && affix.enabled !== false ? affix.level || 0 : 0);
+      if (!preserveWine) wine.value = String(affix?.wine || 0);
+      block.checked = !!affix?.blocked;
+    }
+    lastResult = null;
+    setExportedCode("");
+    const savedResult = session.hasResult || session.result?.possible ? session.result : null;
+    if (savedResult) {
+      try {
+        render(savedResult);
+        lastResult = savedResult;
+        setExportedCode(savedResult.possible && !savedResult.closest ? savedResult.sets?.[0]?.code : "");
+      } catch (error) {
+        $("output").className = "error";
+        $("output").textContent = `Saved result is incompatible: ${error}. Configuration and affixes loaded; press Execute to optimize again.`;
+      }
+    }
+    updateSaveState();
+    updateCombined();
   }
 
   try {
@@ -799,6 +1382,11 @@
     return [...document.querySelectorAll(".affix")].map(row => {
       const equipment = row.querySelector('[data-kind="equipment"]');
       const wineInput = row.querySelector('[data-kind="wine"]');
+      const block = row.querySelector('[data-kind="block"]');
+      clampAffixInput(equipment);
+      clampAffixInput(wineInput);
+      const blocked = block.checked;
+      equipment.disabled = wineInput.disabled = blocked;
       const level = Number(equipment.value);
       const wine = Number(wineInput.value);
       const total = level + wine;
@@ -811,12 +1399,14 @@
       equipment.classList.toggle("over-max", overMax && level > 0);
       wineInput.classList.toggle("over-max", overMax && wine > 0);
       row.classList.toggle("over-max", overMax);
-      row.classList.toggle("selected", total >= maxLevel || (threshold != null && total >= Number(threshold)));
+      row.classList.toggle("blocked", blocked);
+      row.classList.toggle("selected", !blocked && (total >= maxLevel || (threshold != null && total >= Number(threshold))));
       return {
         name: row.dataset.name,
-        enabled: level > 0,
+        enabled: level > 0 && !blocked,
         level,
-        wine
+        wine,
+        blocked
       };
     });
   }
@@ -835,10 +1425,10 @@
 
   function updateCombined(source) {
     updateRarityMarkers();
-    const combined = $("combined-affixes");
     let affixes = affixValues();
-    const equipmentTotal = affixes.reduce((total, affix) => total + affix.level, 0);
-    const wineTotal = affixes.reduce((total, affix) => total + affix.wine, 0);
+    const activeAffixes = affixes.filter(affix => !affix.blocked);
+    const equipmentTotal = activeAffixes.reduce((total, affix) => total + affix.level, 0);
+    const wineTotal = activeAffixes.reduce((total, affix) => total + affix.wine, 0);
     if (source) {
       const limit = source.dataset.kind === "equipment"
         ? fullSetAffixSlots[$("max-rarity").value] ?? 0
@@ -852,40 +1442,26 @@
           : "Maximum number of victory wine levels reached.\n\nRecommendation: Re-distribute victory wine levels");
       }
     }
-    const correctedEquipmentTotal = affixes.reduce((total, affix) => total + affix.level, 0);
-    const correctedWineTotal = affixes.reduce((total, affix) => total + affix.wine, 0);
-    $("equipment-level-total").textContent = correctedEquipmentTotal;
-    $("wine-level-total").textContent = correctedWineTotal + "/8";
+    const correctedActiveAffixes = affixes.filter(affix => !affix.blocked);
+    const correctedEquipmentTotal = correctedActiveAffixes.reduce((total, affix) => total + affix.level, 0);
+    const correctedWineTotal = correctedActiveAffixes.reduce((total, affix) => total + affix.wine, 0);
     const {label: recommendation, minimum: requiredRarity} = rarityRecommendation(correctedEquipmentTotal);
     const impossible = !requiredRarity || options.rarities.indexOf(requiredRarity) > options.rarities.indexOf($("max-rarity").value);
     const impossibleMessage = correctedEquipmentTotal > 32 ? "Impossible with highest rarity, reduce number of affixes" : "Impossible with maximum rarity, increase rarity or reduce number of equipment affixes";
     const observation = $("affix-observation");
-    observation.textContent = impossible ? impossibleMessage : recommendation;
-    observation.className = "affix-summary-value affix-observation" + (impossible ? " impossible" : "");
+    observation.textContent = `Recommendation: ${impossible ? impossibleMessage : recommendation}`;
+    observation.className = "affix-observation" + (impossible ? " impossible" : "");
     $("wine-error").textContent = correctedWineTotal > 8 ? "Wine limit exceeded. Reduce wine levels." : "";
-    combined.replaceChildren();
-    for (const affix of affixes) {
-      if (!affix.enabled && !affix.wine) continue;
-      const details = options.affixDetails[affix.name];
-      const maxLevel = Math.max(...Object.keys(details.levels).map(Number));
-      const level = (affix.enabled ? affix.level : 0) + affix.wine;
-      const threshold = thresholdFor(details);
-      const item = document.createElement("div");
-      item.className = "combined-entry";
-      const heading = document.createElement("div");
-      heading.textContent = `${affix.name}: ${level}/${maxLevel}`;
-      if (level > maxLevel) {
-        heading.className = "wasteful";
-      }
-      else if (threshold && level >= Number(threshold)) heading.className = "threshold";
-      const effect = document.createElement("div");
-      effect.className = "combined-effect";
-      effect.textContent = details.levels[String(Math.min(level, maxLevel))];
-      item.append(heading, effect);
-      combined.append(item);
-    }
-    if (!combined.children.length) combined.textContent = "No affixes selected.";
-    $("execute").disabled = correctedWineTotal > 8 || impossible;
+    const invalidReason = correctedWineTotal > 8
+      ? "Reduce wine levels to continue."
+      : impossible
+        ? impossibleMessage + "."
+        : "";
+    setExecuteState(!!invalidReason, invalidReason);
+    updateBuildSummary(lastResult?.possible ? lastResult : null);
+    filterAffixes();
+    updateNavState();
+    renderComparer();
   }
   function effectCount(text) { return text.split(/[.,](?=\s|$)/).filter(Boolean).length; }
   function thresholdFor(details) {
@@ -898,7 +1474,7 @@
 
   const collectRequest = () => {
     const affixes = affixValues();
-    const wineTotal = affixes.reduce((total, affix) => total + affix.wine, 0);
+    const wineTotal = affixes.filter(affix => !affix.blocked).reduce((total, affix) => total + affix.wine, 0);
     if (affixes.some(affix => affix.wine < 0 || affix.wine > 2)) throw new Error("Wine levels must be between 0 and 2.");
     if (wineTotal > 8) throw new Error("Total wine levels cannot exceed 8.");
     const fixedRarities = Object.fromEntries(fixedRaritySlots
@@ -913,7 +1489,7 @@
       ring: `${$("ring-primary").value}/${$("ring-damage").value}`,
       amulet: `${$("amulet-primary").value}/${$("amulet-damage").value}`,
       fixedRarities,
-      rarityPriority: [...priorityList.children].map(row => row.dataset.slot),
+      statPriority: [...statPriorityList.children].map(row => row.dataset.stat),
       affixes,
       fillGemSlots: $("fill-gem-slots").checked,
       lowPerformance: $("low-performance").checked
@@ -1007,6 +1583,20 @@
   };
 
   updateCombined();
+  const navLinks = [...document.querySelectorAll(".left-nav a[data-section]")];
+  const sectionObserver = new IntersectionObserver(entries => {
+    const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (!visible) return;
+    for (const link of navLinks) {
+      const current = link.dataset.section === visible.target.id;
+      link.toggleAttribute("aria-current", current);
+      if (current) link.setAttribute("aria-current", "step");
+      if (current) link.dataset.state = "current";
+    }
+  }, { rootMargin: "-12% 0px -65%" });
+  for (const id of ["equipment", "affixes-section", "results"]) sectionObserver.observe($(id));
+  $("summary-copy-code").onclick = () => $("copy-code").click();
+  $("summary-save-result").onclick = () => $("save-result").click();
 
   async function refreshSavedResults(selectedName = "") {
     const select = $("load-result-select");
@@ -1027,6 +1617,26 @@
     select.disabled = !results.length;
     $("load-result").disabled = !select.value;
     $("delete-result").disabled = !select.value;
+    const saved = $("saved-build-list");
+    saved.replaceChildren();
+    if (!results.length) {
+      saved.innerHTML = '<li class="search-footer">None yet</li>';
+    } else {
+      for (const result of results.slice(0, 5)) {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = result.name;
+        button.title = result.name;
+        button.onclick = () => {
+          select.value = result.name;
+          $("load-result").disabled = false;
+          $("load-result").click();
+        };
+        item.append(button);
+        saved.append(item);
+      }
+    }
   }
 
   let saving = Promise.resolve();
@@ -1035,6 +1645,8 @@
   ).catch(() => {});
   $("reset-affixes").onclick = () => {
     if (!confirm("Reset all affix and wine levels?")) return;
+    importedBuild = null;
+    invalidateResult();
     document.querySelectorAll(".affix input").forEach(input => input.value = "0");
     updateCombined();
     saveSession();
@@ -1078,9 +1690,11 @@
   };
   $("save-result").onclick = async () => {
     try {
-      const name = $("result-name").value.trim() || `Result ${new Date().toLocaleString()}`;
+      const name = $("result-name").value.trim();
+      if (!name) return;
       await GUIService.SaveResult(name, { request: collectRequest(), result: lastResult, hasResult: true });
       $("result-name").value = "";
+      updateSaveState();
       await refreshSavedResults(name);
       setCodeStatus("save-status", "Saved", true);
     } catch (error) {
@@ -1089,10 +1703,12 @@
   };
   refreshSavedResults().catch(error => { $("output").textContent = String(error); });
 
-  $("execute").onclick = async () => {
-    const button = $("execute");
-    button.disabled = true;
+  const runOptimization = async () => {
+    setExecuteState(true, "Optimizing…");
     optimizing = true;
+    lastResult = null;
+    importedBuild = null;
+    updateSaveState();
     setExportedCode("");
     $("output").textContent = "Optimizing...";
     try {
@@ -1100,16 +1716,18 @@
       lastResult = await GUIService.Execute(request);
       optimizing = false;
       render(lastResult);
-      $("save-result").disabled = !lastResult.possible;
+      updateSaveState();
       setExportedCode(lastResult.possible && !lastResult.closest ? lastResult.sets?.[0]?.code : "");
       await saveSession();
+      $("results").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) {
       $("output").textContent = String(error);
     } finally {
       optimizing = false;
-      button.disabled = false;
+      updateCombined();
     }
   };
+  executeButtons().forEach(button => button.onclick = runOptimization);
 
   function appendRules(output, rules = []) {
     if (!rules?.length) return;
@@ -1158,19 +1776,37 @@
     output.append(details);
   }
 
+  function invalidRecommendation(result) {
+    const total = affixValues().filter(affix => !affix.blocked).reduce((sum, affix) => sum + affix.level, 0);
+    const capacity = fullSetAffixSlots[$("max-rarity").value] ?? 0;
+    if (total > capacity) return `Equipment requires ${total} affix levels, but ${$("max-rarity").value} supports ${capacity}. Increase maximum rarity or reduce a target.`;
+    if (result.closest && result.distance) return `No exact build found. The closest result is short by ${result.distance} target level${result.distance === 1 ? "" : "s"}. Try reducing the largest target or increasing maximum rarity.`;
+    return result.message || "No exact build found. Increase maximum rarity or reduce a target affix level.";
+  }
+
   function render(result) {
     const output = $("output");
     output.replaceChildren();
     output.className = result.possible ? "" : "error";
+    updateBuildSummary(result);
+    updateNavState();
     const status = document.createElement("div");
     const invalid = !result.possible || result.closest;
     status.className = `build-title ${invalid ? "invalid" : "valid"}`;
-    status.textContent = invalid ? "INVALID" : "VALID";
+    status.textContent = invalid ? "NO EXACT BUILD" : "VALID BUILD";
     output.append(status);
+    const overview = document.createElement("div");
+    overview.className = "result-overview";
+    const overviewTitle = document.createElement("strong");
+    overviewTitle.textContent = invalid ? "Optimizer needs a small adjustment" : "Recommended build found";
+    const overviewMeta = document.createElement("span");
+    overviewMeta.textContent = result.possible ? `${result.sets?.length || 0} result${result.sets?.length === 1 ? "" : "s"} · ${Number(result.seconds || 0).toFixed(2)}s` : "Review the constraint below";
+    overview.append(overviewTitle, overviewMeta);
+    output.append(overview);
     if (invalid) {
       const recommendation = document.createElement("div");
       recommendation.className = "recommendation";
-      recommendation.textContent = "Recommendation: Increase maximum rarity or decrease level of selected affixes";
+      recommendation.textContent = invalidRecommendation(result);
       output.append(recommendation);
     }
     if (!result.possible) {
