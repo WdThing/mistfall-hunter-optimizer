@@ -62,7 +62,12 @@
   };
 
   const execute = request => {
-    if (workerCount === 1) return call(primaryWorker, "execute", request).then(stripRank);
+    if (workerCount === 1) {
+      return call(primaryWorker, "execute", request).then(result => {
+        for (const listener of listeners) listener({ data: { milestone: "Worker 1 finished." } });
+        return stripRank(result);
+      });
+    }
     const progress = Array(workerCount).fill(null);
     workers.slice(0, workerCount).forEach((state, shard) => {
       state.progress = update => {
@@ -75,6 +80,9 @@
       ...request,
       searchShard: shard,
       searchShards: workerCount
+    }).then(result => {
+      for (const listener of listeners) listener({ data: { milestone: `Worker ${shard + 1} finished.` } });
+      return result;
     }));
     return Promise.all(searches).then(results => {
       const possible = results.filter(result => result.possible);

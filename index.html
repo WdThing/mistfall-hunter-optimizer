@@ -74,6 +74,7 @@
     .code-help { max-width: 760px; }
     .result-toggle { flex-direction: row; align-items: center; }
     .progress-stage { display: inline-block; width: 24ch; }
+    .optimization-milestone { color: #969baa; }
     #output { min-height: 260px; margin-top: 18px; padding: 16px; overflow: auto; background: #0e1012; border: 1px solid #343940; border-radius: 6px; }
     .build-title { margin-bottom: 10px; font-size: 1.05rem; font-weight: 700; }
     .build-title.valid { color: #69db7c; }
@@ -821,8 +822,43 @@
   let importedBuild = null;
   let configurationChanged = false;
   let optimizing = false;
+  let optimizationStartedAt = 0;
+  let optimizationMilestones = [];
+  let optimizationStatus = "";
+  let optimizationProgressState = null;
   let affixNoticeTimer;
   const executeButtons = () => [...document.querySelectorAll("[data-execute]")];
+  const appendOptimizationMilestones = output => optimizationMilestones.forEach(message => {
+    const line = document.createElement("div");
+    line.className = "optimization-milestone";
+    line.textContent = message;
+    output.append(line);
+  });
+  const renderOptimizationProgress = () => {
+    const output = $("output");
+    output.replaceChildren();
+    appendOptimizationMilestones(output);
+    if (optimizationProgressState) {
+      const status = document.createElement("div");
+      const { stage, current, total, tested } = optimizationProgressState;
+      status.append(document.createTextNode("Optimizing — "));
+      const stageText = document.createElement("span");
+      stageText.className = "progress-stage";
+      stageText.textContent = `${stage} (${current}/${total} slots)`;
+      status.append(stageText, document.createTextNode(` — ${Number(tested).toLocaleString()} combinations tested`));
+      output.append(status);
+    } else if (optimizationStatus) {
+      const status = document.createElement("div");
+      status.textContent = optimizationStatus;
+      output.append(status);
+    }
+  };
+  const addOptimizationMilestone = message => {
+    if (!message || optimizationMilestones.some(line => line.endsWith(`: ${message}`))) return;
+    const elapsed = ((performance.now() - optimizationStartedAt) / 1000).toFixed(2);
+    optimizationMilestones.push(`${elapsed}s elapsed: ${message}`);
+    renderOptimizationProgress();
+  };
   const summaryToggle = $("summary-toggle");
   summaryToggle.onclick = () => {
     const open = summaryToggle.closest(".build-sidebar").classList.toggle("expanded");
@@ -1232,11 +1268,11 @@
 
   Events.On("optimization-progress", event => {
     if (!optimizing) return;
-    const { stage, current, total, tested } = event.data;
-    const stageText = document.createElement("span");
-    stageText.className = "progress-stage";
-    stageText.textContent = `${stage} (${current}/${total} slots)`;
-    $("output").replaceChildren(document.createTextNode("Optimizing — "), stageText, document.createTextNode(` — ${Number(tested).toLocaleString()} combinations tested`));
+    const { milestone, stage, current, total, tested } = event.data;
+    addOptimizationMilestone(milestone);
+    if (!stage) return;
+    optimizationProgressState = { stage, current, total, tested };
+    renderOptimizationProgress();
   });
 
   const categoryOrder = ["Offensive", "Defensive", "Functional"];
@@ -1777,11 +1813,16 @@
   const runOptimization = async () => {
     setExecuteState(true, "Optimizing…");
     optimizing = true;
+    optimizationStartedAt = performance.now();
+    optimizationMilestones = [];
+    optimizationStatus = "Optimizing...";
+    optimizationProgressState = null;
     lastResult = null;
     importedBuild = null;
     updateSaveState();
     setExportedCode("");
-    $("output").textContent = "Optimizing...";
+    renderOptimizationProgress();
+    $("results").scrollIntoView({ behavior: "smooth", block: "start" });
     try {
       const request = collectRequest();
       lastResult = await GUIService.Execute(request);
@@ -1790,7 +1831,6 @@
       updateSaveState();
       setExportedCode(lastResult.possible && !lastResult.closest ? lastResult.sets?.[0]?.code : "");
       await saveSession();
-      $("results").scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (error) {
       $("output").textContent = String(error);
     } finally {
@@ -1842,6 +1882,7 @@
     search.className = "search-footer";
     search.textContent = `Search: ${Number(result.tested || 0).toLocaleString()} combinations · ${Number(result.seconds || 0).toFixed(2)}s`;
     content.append(search);
+    appendOptimizationMilestones(content);
     appendRules(content, result.rules);
     details.append(summary, content);
     output.append(details);
