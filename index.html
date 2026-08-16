@@ -220,7 +220,16 @@
     .import-card > .section-header { margin-bottom: 0; }
     .import-card[open] > .section-header { margin-bottom: 20px; }
     .advanced-config-body { padding-top: 12px; }
-    .advanced-config-body > p { margin: 0 0 14px; color: #969baa; font-size: .82rem; }
+    .advanced-config-body > p, .advanced-panel > p { margin: 0 0 14px; color: #969baa; font-size: .82rem; }
+    .advanced-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 16px; border-bottom: 1px solid #303440; }
+    .advanced-tab { flex: 0 0 auto; width: auto !important; margin: 0; padding: 8px 12px; border: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; background: transparent; color: #969baa; font-size: .8rem; }
+    .advanced-tab:hover:not(:disabled) { background: #292c37; box-shadow: none; transform: none; }
+    .advanced-tab[aria-selected="true"] { border-bottom-color: #a895ff; background: #292c37; color: #fff; }
+    .advanced-panel[hidden] { display: none; }
+    .optimizer-settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+    .optimizer-settings-column { min-width: 0; }
+    .optimizer-settings-column + .optimizer-settings-column { padding-left: 24px; border-left: 1px solid #555a6a; }
+    .optimizer-column-title { margin: 0 0 12px; color: #e2e3e8; font-size: .88rem; }
     .innate-priority { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; color: #e2e3e8; font-size: .82rem; }
     .innate-priority span { padding: 5px 8px; background: #20232b; border: 1px solid #343940; border-radius: 6px; }
     .innate-priority em { color: #969baa; font-size: .72rem; font-style: normal; }
@@ -234,6 +243,21 @@
     .stat-priority li[data-stat="defense"] > span:first-of-type { color: #4dabf7; }
     .priority-actions { display: flex; gap: 4px; }
     .priority-actions button { width: 28px; height: 28px; margin: 0; padding: 0; line-height: 1; }
+    .optimizer-mode { display: flex; align-items: center; gap: 8px; width: max-content; max-width: 100%; margin: 0 0 14px; color: #969baa; font-size: .82rem; font-weight: 650; }
+    .optimizer-mode .mode-option { flex: 0 0 auto; padding: 4px 7px; border: 1px solid transparent; border-radius: 5px; color: #969baa; }
+    .optimizer-mode[data-mode="lowest-rarity"] .mode-option:first-child, .optimizer-mode[data-mode="stat-first"] .mode-option:last-child { border-color: #8b6cff; background: #3b3261; color: #fff; }
+    .mode-switch { position: relative; flex: 0 0 48px !important; width: 48px !important; min-width: 48px; max-width: 48px; height: 22px; margin: 0; padding: 0; border: 1px solid #555a6a; border-radius: 999px; background: #303440; }
+    .mode-switch span { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #969baa; transition: left .15s ease, background .15s ease; }
+    .mode-switch[aria-checked="true"] span { left: 29px; background: #a895ff; }
+    .stat-first-options { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 0 0 14px; }
+    .stat-first-options label { min-width: 150px; font-size: .78rem; }
+    .stat-first-options input[type="number"] { width: 130px; margin-top: 5px; }
+    .stat-first-description { flex: 1 0 100%; margin: -3px 0 0; color: #969baa; font-size: .78rem; line-height: 1.35; }
+    .setting-label { display: flex; align-items: center; gap: 5px; }
+    .setting-help { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border: 1px solid #77708f; border-radius: 50%; color: #c1b5ff; cursor: help; font-size: .68rem; }
+    .setting-help .affix-tooltip { display: block; }
+    .setting-help:hover, .setting-help:focus-visible { z-index: 31; }
+    .setting-help:hover .affix-tooltip, .setting-help:focus-visible .affix-tooltip { opacity: 1; visibility: visible; }
     .fixed-rarities { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
     .fixed-rarities label { min-width: 0; font-size: .82rem; font-weight: 650; }
     .fixed-rarities select { margin-top: 5px; }
@@ -320,6 +344,8 @@
       .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .controls .rarity-range { grid-column: 1 / -1; }
       .fixed-rarities { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .optimizer-settings-grid { grid-template-columns: 1fr; }
+      .optimizer-settings-column + .optimizer-settings-column { padding-top: 18px; padding-left: 0; border-top: 1px solid #555a6a; border-left: 0; }
       .load-controls > label { grid-column: 1 / -1; }
       .load-controls > select { grid-column: 1; grid-row: 2; }
       #load-result { grid-column: 2; grid-row: 2; }
@@ -409,6 +435,9 @@
     .affix-search { flex: 1 1 220px; min-width: 180px; }
     .affix-tools label { font-size: .78rem; }
     .affix-tools input[type="search"] { width: 100%; margin-top: 5px; }
+    .minimum-affix-level { flex: 0 0 180px; }
+    .minimum-affix-level span { display: flex; align-items: center; gap: 6px; }
+    .minimum-affix-level input { width: 64px; }
     .category-filters { display: flex; gap: 5px; }
     .category-filters button { padding: 7px 10px; font-size: .76rem; }
     .category-filters button.active { background: #8b6cff; border-color: #a895ff; }
@@ -561,23 +590,50 @@
     <details class="advanced-config">
       <summary>Advanced Configuration <span class="advanced-config-toggle expand">Click to Expand</span><span class="advanced-config-toggle collapse">Click to Collapse</span></summary>
       <div class="advanced-config-body">
-        <p>Fix exact rarities for individual items. Leave a slot at Any to let the optimizer choose.</p>
-        <div class="stat-priority"><strong>Stat priority <span class="priority-hint">(1 = highest priority)</span></strong><ol id="stat-priority-list" aria-label="Stat priority order">
-          <li data-stat="weaponDamage"><span>Weapon Damage</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Weapon Damage up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Weapon Damage down">↓</button></span></li>
-          <li data-stat="attack"><span>Attack</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Attack up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Attack down">↓</button></span></li>
-          <li data-stat="defense"><span>Defense</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Defense up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Defense down">↓</button></span></li>
-          <li data-stat="health"><span>Health</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Health up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Health down">↓</button></span></li>
-        </ol></div>
-        <div class="fixed-rarities">
-          <label>Weapon Rarity<span class="rarity-select" data-rarity-select><select id="weapon-rarity"></select></span></label>
-          <label>Helmet Rarity<span class="rarity-select" data-rarity-select><select id="fixed-helmet"></select></span></label>
-          <label>Clothes Rarity<span class="rarity-select" data-rarity-select><select id="fixed-clothes"></select></span></label>
-          <label>Gauntlets Rarity<span class="rarity-select" data-rarity-select><select id="fixed-gauntlets"></select></span></label>
-          <label>Pants Rarity<span class="rarity-select" data-rarity-select><select id="fixed-pants"></select></span></label>
-          <label>Boots Rarity<span class="rarity-select" data-rarity-select><select id="fixed-boots"></select></span></label>
-          <label>Necklace Rarity<span class="rarity-select" data-rarity-select><select id="fixed-necklace"></select></span></label>
-          <label>Ring Rarity<span class="rarity-select" data-rarity-select><select id="fixed-ring"></select></span></label>
+        <div class="advanced-tabs" role="tablist" aria-label="Advanced configuration">
+          <button id="advanced-tab-slot-rarity" class="advanced-tab" type="button" role="tab" aria-selected="true" aria-controls="advanced-panel-slot-rarity" data-advanced-tab="slot-rarity">Slot Rarity</button>
+          <button id="advanced-tab-optimizer" class="advanced-tab" type="button" role="tab" aria-selected="false" aria-controls="advanced-panel-optimizer" data-advanced-tab="optimizer">Optimizer Settings</button>
         </div>
+        <section id="advanced-panel-slot-rarity" class="advanced-panel" role="tabpanel" aria-labelledby="advanced-tab-slot-rarity">
+          <p>Fix exact rarities for individual items. Leave a slot at Any to let the optimizer choose.</p>
+          <div class="fixed-rarities">
+            <label>Weapon Rarity<span class="rarity-select" data-rarity-select><select id="weapon-rarity"></select></span></label>
+            <label>Helmet Rarity<span class="rarity-select" data-rarity-select><select id="fixed-helmet"></select></span></label>
+            <label>Clothes Rarity<span class="rarity-select" data-rarity-select><select id="fixed-clothes"></select></span></label>
+            <label>Gauntlets Rarity<span class="rarity-select" data-rarity-select><select id="fixed-gauntlets"></select></span></label>
+            <label>Pants Rarity<span class="rarity-select" data-rarity-select><select id="fixed-pants"></select></span></label>
+            <label>Boots Rarity<span class="rarity-select" data-rarity-select><select id="fixed-boots"></select></span></label>
+            <label>Necklace Rarity<span class="rarity-select" data-rarity-select><select id="fixed-necklace"></select></span></label>
+            <label>Ring Rarity<span class="rarity-select" data-rarity-select><select id="fixed-ring"></select></span></label>
+          </div>
+        </section>
+        <section id="advanced-panel-optimizer" class="advanced-panel" role="tabpanel" aria-labelledby="advanced-tab-optimizer" hidden>
+          <div class="optimizer-settings-grid">
+            <div class="optimizer-settings-column">
+              <h3 class="optimizer-column-title">Stat Priority <span class="priority-hint">(1 = highest priority)</span></h3>
+              <div class="stat-priority"><ol id="stat-priority-list" aria-label="Stat priority order">
+                <li data-stat="weaponDamage"><span>Weapon Damage</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Weapon Damage up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Weapon Damage down">↓</button></span></li>
+                <li data-stat="attack"><span>Attack</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Attack up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Attack down">↓</button></span></li>
+                <li data-stat="defense"><span>Defense</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Defense up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Defense down">↓</button></span></li>
+                <li data-stat="health"><span>Health</span><span class="priority-actions"><button class="outline secondary" data-stat-move="up" type="button" aria-label="Move Health up">↑</button><button class="outline secondary" data-stat-move="down" type="button" aria-label="Move Health down">↓</button></span></li>
+              </ol></div>
+            </div>
+            <div class="optimizer-settings-column">
+              <h3 class="optimizer-column-title">Optimization Mode</h3>
+              <div class="optimizer-mode" data-mode="lowest-rarity" role="group" aria-label="Optimization mode">
+                <span class="mode-option">Lowest Rarity</span>
+                <button id="optimization-mode" class="mode-switch" type="button" role="switch" aria-checked="false" aria-label="Optimization mode: Lowest Rarity"><span aria-hidden="true"></span></button>
+                <span class="mode-option">Stat First</span>
+              </div>
+              <div id="stat-first-options" class="stat-first-options" hidden>
+                <p class="stat-first-description">Stat First: (1) generates affix combinations near the Reference Cost using the price-by-total-level lookup, (2) finds real equipment for each, and (3) follows the stat-versus-average-price Pareto frontier. Validated results target 90%-110% of the Reference Cost; if none fit, the closest available result is used.</p>
+                <label for="good-gear-min-gain"><span class="setting-label">Upgrade value threshold <span class="setting-help" role="img" tabindex="0" aria-label="Upgrade value threshold help">?<span class="affix-tooltip">This is the minimum stat gain required per extra average-price unit. Higher values stop sooner and favor cheaper gear. Lower values accept smaller gains and search longer for stronger, more expensive gear. Set 0 to use automatic stopping: stop when gain drops to half the previous gain for three consecutive steps.</span></span></span><input id="good-gear-min-gain" type="number" min="0" step="0.0001" value="0"></label>
+                <label for="good-gear-candidates"><span class="setting-label">Affix combinations to test <span class="setting-help" role="img" tabindex="0" aria-label="Affix combinations help">?<span class="affix-tooltip">The maximum number of relaxed affix target combinations Stat First generates and validates with the normal equipment optimizer. Higher values broaden the search but take longer; lower values finish faster but can miss a good combination.</span></span></span><input id="good-gear-candidates" type="number" min="1" max="100" value="20"></label>
+                <label for="stat-first-reference-cost"><span class="setting-label">Reference Cost <span class="setting-help" role="img" tabindex="0" aria-label="Reference Cost help">?<span class="affix-tooltip">The target average price used with the lookup table. Set 0 to disable price guidance. Stat First targets lookup entries and validated equipment within 90%-110% of this value. If no validated result fits, it uses the closest available result.</span></span></span><input id="stat-first-reference-cost" type="number" min="0" step="1" value="0" placeholder="0 = no preference"></label>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </details>
     <div class="help-note">Choose the filters first. Set the affix levels that you need, then press Optimize.</div>
@@ -589,6 +645,7 @@
     </header>
   <div class="affix-tools">
     <label class="affix-search" for="affix-search">Search affixes<input id="affix-search" type="search" placeholder="Search affixes..." autocomplete="off"></label>
+    <label class="minimum-affix-level" for="minimum-affix-level">Minimum total level<span><input id="minimum-affix-level" type="number" min="0" max="32" value="0"> / <output id="minimum-affix-level-max">32</output></span></label>
   </div>
   <div class="help-note">Enter equipment and wine levels. The build summary stays visible while you edit. Wine has a maximum total of 8.</div>
   <div id="affix-notice" class="affix-notice" role="status" aria-live="polite"></div>
@@ -715,6 +772,13 @@
   };
   const fullSetAffixSlots = { Gray: 0, White: 0, Green: 8, Blue: 16, Purple: 24, Gold: 32 };
   const rarityLabel = rarity => fullSetAffixSlots[rarity] == null ? rarity : `${rarity} (${fullSetAffixSlots[rarity]})`;
+  const updateMinimumAffixLevel = () => {
+    const input = $("minimum-affix-level");
+    const maximum = fullSetAffixSlots[$("max-rarity").value] ?? 0;
+    input.max = String(maximum);
+    input.value = String(Math.min(maximum, Math.max(0, Number(input.value) || 0)));
+    $("minimum-affix-level-max").textContent = String(maximum);
+  };
   const updateRarityMarkers = () => document.querySelectorAll("[data-rarity-select]").forEach(wrapper => {
     wrapper.dataset.rarity = wrapper.querySelector("select").value || "Any";
   });
@@ -775,6 +839,7 @@
     if (options.rarities.indexOf($("min-rarity").value) > options.rarities.indexOf($("max-rarity").value)) $("max-rarity").value = $("min-rarity").value;
     updateWeaponRarities($("weapon-rarity").value);
     updateFixedRarities();
+    updateMinimumAffixLevel();
     updateCombined();
   };
   $("max-rarity").onchange = () => {
@@ -782,11 +847,28 @@
     if (options.rarities.indexOf($("max-rarity").value) < options.rarities.indexOf($("min-rarity").value)) $("min-rarity").value = $("max-rarity").value;
     updateWeaponRarities($("weapon-rarity").value);
     updateFixedRarities();
+    updateMinimumAffixLevel();
     updateCombined();
   };
   updateWeaponRarities();
   updateFixedRarities();
+  updateMinimumAffixLevel();
+  $("minimum-affix-level").oninput = () => {
+    invalidateResult();
+    updateMinimumAffixLevel();
+    updateCombined();
+    saveSession();
+  };
   document.querySelectorAll("[data-rarity-select] select").forEach(select => select.addEventListener("change", updateRarityMarkers));
+
+  const advancedTabs = [...document.querySelectorAll("[data-advanced-tab]")];
+  const setAdvancedTab = name => advancedTabs.forEach(tab => {
+    const selected = tab.dataset.advancedTab === name;
+    tab.setAttribute("aria-selected", String(selected));
+    document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
+  });
+  advancedTabs.forEach(tab => tab.onclick = () => setAdvancedTab(tab.dataset.advancedTab));
+  setAdvancedTab("slot-rarity");
 
   const defaultStatPriority = ["weaponDamage", "attack", "defense", "health"];
   const statPriorityList = $("stat-priority-list");
@@ -817,6 +899,22 @@
     saveSession();
   };
   applyStatPriority();
+
+  const optimizationMode = $("optimization-mode");
+  const statFirstOptions = $("stat-first-options");
+  const syncOptimizationMode = statFirst => {
+    optimizationMode.parentElement.dataset.mode = statFirst ? "stat-first" : "lowest-rarity";
+    optimizationMode.setAttribute("aria-checked", String(statFirst));
+    optimizationMode.setAttribute("aria-label", `Optimization mode: ${statFirst ? "Stat First" : "Lowest Rarity"}`);
+    statFirstOptions.hidden = !statFirst;
+  };
+  optimizationMode.onclick = () => {
+    syncOptimizationMode(optimizationMode.getAttribute("aria-checked") !== "true");
+    invalidateResult();
+    updateCombined();
+    saveSession();
+  };
+  syncOptimizationMode(false);
 
   let lastResult = null;
   let importedBuild = null;
@@ -1445,7 +1543,13 @@
     const fixedRarities = request.fixedRarities || {};
     updateWeaponRarities(fixedRarities.weapon || request.weaponRarity);
     updateFixedRarities(fixedRarities);
+    $("minimum-affix-level").value = String(Number(request.minimumAffixLevel) || 0);
+    updateMinimumAffixLevel();
     $("fill-gem-slots").checked = request.fillGemSlots !== false;
+    syncOptimizationMode(!!(request.statFirst || request.goodGear));
+    $("good-gear-min-gain").value = String(Number(request.goodGearMinimumGain) || 0);
+    $("good-gear-candidates").value = String(Number(request.goodGearCandidateLimit) || 20);
+    $("stat-first-reference-cost").value = String(Math.max(0, Number(request.statFirstReferenceCost ?? request.statFirstCostCeiling) || 0));
     for (const accessory of ["ring", "amulet"]) {
       const value = request[accessory] || "Any";
       const parts = value === "Any" ? [] : value.split("/");
@@ -1599,6 +1703,11 @@
       fixedRarities,
       statPriority: [...statPriorityList.children].map(row => row.dataset.stat),
       affixes,
+      minimumAffixLevel: Number($("minimum-affix-level").value),
+      statFirst: optimizationMode.getAttribute("aria-checked") === "true",
+      goodGearMinimumGain: Number($("good-gear-min-gain").value),
+      goodGearCandidateLimit: Number($("good-gear-candidates").value),
+      statFirstReferenceCost: Number($("stat-first-reference-cost").value),
       fillGemSlots: $("fill-gem-slots").checked
     };
   };
@@ -1750,11 +1859,18 @@
   const saveSession = () => saving = saving.then(() =>
     GUIService.SaveSession({ request: collectRequest(), result: lastResult || {}, hasResult: !!lastResult, help: document.body.classList.contains("help-mode") })
   ).catch(() => {});
+  document.querySelectorAll("[id^='good-gear'], #stat-first-reference-cost").forEach(input => input.oninput = () => {
+    invalidateResult();
+    updateCombined();
+    saveSession();
+  });
   $("reset-affixes").onclick = () => {
     if (!confirm("Reset all affix and wine levels?")) return;
     importedBuild = null;
     invalidateResult();
     document.querySelectorAll(".affix input").forEach(input => input.value = "0");
+    $("minimum-affix-level").value = "0";
+    updateMinimumAffixLevel();
     updateCombined();
     saveSession();
   };
@@ -1922,7 +2038,7 @@
       output.append(recommendation);
     }
     if (!result.possible) {
-      output.append(result.message || "No matching set found.");
+      if (!result.message) output.append("No matching set found.");
       const divider = document.createElement("hr");
       divider.className = "result-divider";
       output.append(divider);
