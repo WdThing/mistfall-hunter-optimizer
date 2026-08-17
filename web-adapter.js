@@ -55,10 +55,101 @@
   };
 
   const stripRank = result => {
-    if (!result?.optimizationRank) return result;
+    if (!result) return result;
     const cleaned = { ...result };
     delete cleaned.optimizationRank;
+    delete cleaned.statFirstAlternatives;
+    delete cleaned.statFirstCandidateSets;
     return cleaned;
+  };
+
+  const statPriorityOrder = request => {
+    const indexes = { "weapon damage": 0, weapondamage: 0, damage: 0, attack: 1, defense: 2, defence: 2, health: 3 };
+    const order = (request.statPriority || []).map(value => indexes[String(value).toLowerCase().replace(/\s+/g, " ")]);
+    return order.length === 4 && new Set(order).size === 4 && order.every(index => index !== undefined) ? order : [0, 1, 2, 3];
+  };
+
+  const statFirstValue = (alternative, index) => {
+    const rank = alternative.optimizationRank;
+    if (!rank) return 0;
+    return Number(rank.stats?.[index] || 0) + (index === 1 ? Number(rank.damage || 0) + Number(rank.defensePenetration || 0) * 3 : 0);
+  };
+
+  const selectStatFirstAlternative = (request, alternatives) => {
+    if (!alternatives.length) return null;
+    const minimum = Array(4).fill(Infinity);
+    const maximum = Array(4).fill(-Infinity);
+    for (const alternative of alternatives) {
+      for (let index = 0; index < 4; index++) {
+        const value = statFirstValue(alternative, index);
+        minimum[index] = Math.min(minimum[index], value);
+        maximum[index] = Math.max(maximum[index], value);
+      }
+    }
+    const order = statPriorityOrder(request);
+    const scored = alternatives.map(alternative => {
+      let weight = 1;
+      let score = 0;
+      for (const index of order) {
+        const value = statFirstValue(alternative, index);
+        score += weight * (maximum[index] > minimum[index] ? (value - minimum[index]) / (maximum[index] - minimum[index]) : 0);
+        weight *= 0.1;
+      }
+      return { ...alternative, score, price: Number(alternative.optimizationRank?.averagePrice || 0) };
+    });
+    const referenceCost = Number(request.statFirstReferenceCost || request.statFirstCostCeiling || 0);
+    const underBudget = referenceCost > 0 ? scored.filter(alternative => alternative.price <= referenceCost * 1.1) : scored;
+    const eligible = referenceCost > 0 && underBudget.length ? underBudget : scored;
+    eligible.sort((left, right) => left.price - right.price || right.score - left.score);
+    const frontier = [];
+    let bestScore = -1;
+    for (const alternative of eligible) {
+      if (alternative.score > bestScore) {
+        frontier.push(alternative);
+        bestScore = alternative.score;
+      }
+    }
+    let selected = frontier[0];
+    let lowGain = 0;
+    let lastGain = -1;
+    for (let index = 1; index < frontier.length; index++) {
+      const previous = frontier[index - 1];
+      const candidate = frontier[index];
+      const priceDelta = candidate.price - previous.price;
+      const gain = priceDelta > 0 ? (candidate.score - previous.score) / priceDelta : 0;
+      if (lastGain >= 0 && gain <= lastGain / 4) {
+        lowGain++;
+        if (lowGain >= 3) break;
+      } else {
+        lowGain = 0;
+        selected = candidate;
+      }
+      lastGain = gain;
+    }
+    return { selected, scored, ranked: eligible, frontier, fallback: referenceCost > 0 && !underBudget.length };
+  };
+
+  const mergeStatFirstDebug = (results, selection, request) => {
+    const candidates = new Map();
+    for (const result of results) {
+      for (const candidate of result.debug?.candidates || []) {
+        const previous = candidates.get(candidate.number);
+        if (!previous || previous.status === "UNTESTED") candidates.set(candidate.number, candidate);
+      }
+    }
+    const scoreByNumber = new Map(selection.scored.filter(candidate => candidate.candidateNumber > 0).map(candidate => [candidate.candidateNumber, candidate.score]));
+    const ranked = new Set(selection.ranked.filter(candidate => candidate.candidateNumber > 0).map(candidate => candidate.candidateNumber));
+    const frontier = new Set(selection.frontier.filter(candidate => candidate.candidateNumber > 0).map(candidate => candidate.candidateNumber));
+    const referenceCost = Number(request.statFirstReferenceCost || request.statFirstCostCeiling || 0);
+    const upper = referenceCost * 1.1;
+    for (const candidate of candidates.values()) {
+      if (scoreByNumber.has(candidate.number)) candidate.score = scoreByNumber.get(candidate.number);
+      candidate.ranked = ranked.has(candidate.number);
+      candidate.frontier = frontier.has(candidate.number);
+      candidate.selected = selection.selected.candidateNumber === candidate.number;
+      if (!selection.fallback && referenceCost > 0 && candidate.status === "valid" && candidate.price > upper) candidate.status = "OVER BUDGET";
+    }
+    return { candidates: [...candidates.values()].sort((left, right) => left.number - right.number) };
   };
 
   const execute = request => {
@@ -76,15 +167,21 @@
         for (const listener of listeners) listener({ data: { ...update, tested } });
       };
     });
-    const searches = workers.slice(0, workerCount).map((state, shard) => call(state, "execute", {
+    const run = (state, shard, candidateSets, generateOnly = false) => call(state, "execute", {
       ...request,
-      searchShard: shard,
-      searchShards: workerCount
+      ...(request.statFirst
+        ? { searchShard: 0, searchShards: 1, statFirstCandidateShard: shard, statFirstCandidateShards: workerCount, ...(candidateSets ? { statFirstCandidates: candidateSets } : {}), ...(generateOnly ? { statFirstGenerateOnly: true } : {}) }
+        : { searchShard: shard, searchShards: workerCount })
     }).then(result => {
       for (const listener of listeners) listener({ data: { milestone: `Worker ${shard + 1} finished.` } });
       return result;
-    }));
-    return Promise.all(searches).then(results => {
+    });
+    const searches = request.statFirst
+      ? run(workers[0], 0, undefined, true).then(first => Promise.all(
+        workers.slice(0, workerCount).map((state, shard) => run(state, shard, first.statFirstCandidateSets))
+      ))
+      : Promise.all(workers.slice(0, workerCount).map((state, shard) => run(state, shard)));
+    return searches.then(results => {
       const possible = results.filter(result => result.possible);
       const selected = possible.reduce((best, result) => !best || compareResults(result, best) > 0 ? result : best, null) || results[0];
       const merged = {
@@ -92,6 +189,18 @@
         tested: results.reduce((total, result) => total + (result.tested || 0), 0),
         seconds: Math.max(...results.map(result => result.seconds || 0))
       };
+      if (request.statFirst) {
+        const alternatives = results.flatMap(result => result.statFirstAlternatives || []);
+        const selection = selectStatFirstAlternative(request, alternatives);
+        if (selection) {
+          merged.possible = selection.selected.possible;
+          merged.closest = selection.selected.closest;
+          merged.distance = selection.selected.distance;
+          merged.sets = selection.selected.sets;
+          merged.optimizationRank = selection.selected.optimizationRank;
+          merged.debug = mergeStatFirstDebug(results, selection, request);
+        }
+      }
       return stripRank(merged);
     }).finally(() => workers.slice(0, workerCount).forEach(state => { state.progress = null; }));
   };

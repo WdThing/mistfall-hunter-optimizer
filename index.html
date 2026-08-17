@@ -73,7 +73,7 @@
     .code-status.failure { color: #ff9696; }
     .code-help { max-width: 760px; }
     .result-toggle { flex-direction: row; align-items: center; }
-    .progress-stage { display: inline-block; width: 24ch; }
+    .progress-stage { display: inline; }
     .optimization-milestone { color: #969baa; }
     #output { min-height: 260px; margin-top: 18px; padding: 16px; overflow: auto; background: #0e1012; border: 1px solid #343940; border-radius: 6px; }
     .build-title { margin-bottom: 10px; font-size: 1.05rem; font-weight: 700; }
@@ -363,6 +363,13 @@
     .run-info summary:hover { color: #c1b5ff; }
     .run-info-content { padding-bottom: 4px; }
     .run-info .search-footer { margin-top: 4px; }
+    .debug-candidates { margin: 10px 0; overflow-x: auto; }
+    .debug-candidates summary { padding: 8px 0; color: #ffd43b; cursor: pointer; font-size: .78rem; font-weight: 700; }
+    .debug-candidates table { width: 100%; border-collapse: collapse; font-size: .75rem; }
+    .debug-candidates th, .debug-candidates td { padding: 6px 8px; border-bottom: 1px solid #303440; text-align: left; vertical-align: top; }
+    .debug-candidates th { color: #969baa; font-weight: 600; white-space: nowrap; }
+    .debug-candidates td:first-child, .debug-candidates td:nth-child(4), .debug-candidates td:nth-child(5), .debug-candidates td:nth-child(6), .debug-candidates td:nth-child(7) { white-space: nowrap; }
+    .debug-candidates tr.selected { background: #3b326133; color: #fff; }
     .code-controls, .workspace-code { grid-template-rows: auto auto; align-items: center; }
     .code-controls > label, .workspace-code > label { grid-column: 1; grid-row: 1; display: block; min-width: 0; margin: 0; font-size: .82rem; }
     .code-controls > input, .workspace-code > input { grid-column: 1; grid-row: 2; width: 100%; min-width: 0; margin: 0; }
@@ -626,10 +633,8 @@
                 <span class="mode-option">Stat First</span>
               </div>
               <div id="stat-first-options" class="stat-first-options" hidden>
-                <p class="stat-first-description">Stat First: (1) generates affix combinations near the Reference Cost using the price-by-total-level lookup, (2) finds real equipment for each, and (3) follows the stat-versus-average-price Pareto frontier. Validated results target 90%-110% of the Reference Cost; if none fit, the closest available result is used.</p>
-                <label for="good-gear-min-gain"><span class="setting-label">Upgrade value threshold <span class="setting-help" role="img" tabindex="0" aria-label="Upgrade value threshold help">?<span class="affix-tooltip">This is the minimum stat gain required per extra average-price unit. Higher values stop sooner and favor cheaper gear. Lower values accept smaller gains and search longer for stronger, more expensive gear. Set 0 to use automatic stopping: stop when gain drops to half the previous gain for three consecutive steps.</span></span></span><input id="good-gear-min-gain" type="number" min="0" step="0.0001" value="0"></label>
-                <label for="good-gear-candidates"><span class="setting-label">Affix combinations to test <span class="setting-help" role="img" tabindex="0" aria-label="Affix combinations help">?<span class="affix-tooltip">The maximum number of relaxed affix target combinations Stat First generates and validates with the normal equipment optimizer. Higher values broaden the search but take longer; lower values finish faster but can miss a good combination.</span></span></span><input id="good-gear-candidates" type="number" min="1" max="100" value="20"></label>
-                <label for="stat-first-reference-cost"><span class="setting-label">Reference Cost <span class="setting-help" role="img" tabindex="0" aria-label="Reference Cost help">?<span class="affix-tooltip">The target average price used with the lookup table. Set 0 to disable price guidance. Stat First targets lookup entries and validated equipment within 90%-110% of this value. If no validated result fits, it uses the closest available result.</span></span></span><input id="stat-first-reference-cost" type="number" min="0" step="1" value="0" placeholder="0 = no preference"></label>
+                <p class="stat-first-description">Stat First: (1) generates affix combinations at or below 110% of the Reference Cost using the price-by-total-level lookup, (2) finds real equipment for each, and (3) follows the stat-versus-average-price Pareto frontier. Lower-priced validated results remain eligible; only more expensive results are filtered when a cheaper result exists.</p>
+                <label for="stat-first-reference-cost"><span class="setting-label">Reference Cost <span class="setting-help" role="img" tabindex="0" aria-label="Reference Cost help">?<span class="affix-tooltip">The maximum-guidance average price used with the lookup table. Set 0 to disable price guidance. Stat First keeps lookup entries and validated equipment at or below 110% of this value; lower prices remain eligible.</span></span></span><input id="stat-first-reference-cost" type="number" min="0" step="1" value="0" placeholder="0 = no preference"></label>
               </div>
             </div>
           </div>
@@ -655,10 +660,10 @@
     <div><small class="kicker">Ready to search?</small><strong>Find the most affordable matching setup.</strong></div>
       <div class="result-actions">
         <button id="execute-secondary" data-execute type="button">Optimize</button>
-        <label class="result-toggle"><input id="fill-gem-slots" type="checkbox" checked> Fill Gem Slots</label>
+        <label class="result-toggle"><input id="match-target-strictly" type="checkbox"> Match Target Strictly</label>
       </div>
     </div>
-    <div class="help-note execute-help"><strong>Optimize:</strong> Starts the search. <strong>Fill Gem Slots:</strong> Uses compatible empty sockets.</div>
+    <div class="help-note execute-help"><strong>Optimize:</strong> Starts the search. <strong>Match Target Strictly:</strong> Uses exact target levels and leaves unused sockets empty.</div>
   <section class="workspace-footer">
     <div><small class="kicker">Your workspace</small><strong>Save or export your progress</strong><small>Keep a result for later or move it to another device.</small></div>
     <div id="export-code-row" class="workspace-code">
@@ -942,8 +947,10 @@
       status.append(document.createTextNode("Optimizing — "));
       const stageText = document.createElement("span");
       stageText.className = "progress-stage";
-      stageText.textContent = `${stage} (${current}/${total} slots)`;
-      status.append(stageText, document.createTextNode(` — ${Number(tested).toLocaleString()} combinations tested`));
+      const unit = stage === "Generating candidates" ? "stat affixes" : stage === "Candidate" ? "candidates" : "slots";
+      stageText.textContent = total > 0 ? `${stage} (${current}/${total} ${unit})` : stage;
+      status.append(stageText);
+      if (Number(tested) > 0) status.append(document.createTextNode(` — ${Number(tested).toLocaleString()} combinations tested`));
       output.append(status);
     } else if (optimizationStatus) {
       const status = document.createElement("div");
@@ -993,6 +1000,7 @@
   resultNameInputs.forEach(input => input.oninput = () => syncResultName(input));
   const invalidateResult = () => {
     configurationChanged = true;
+    importedBuild = null;
     if (!lastResult) {
       updateSaveState();
       return;
@@ -1545,10 +1553,8 @@
     updateFixedRarities(fixedRarities);
     $("minimum-affix-level").value = String(Number(request.minimumAffixLevel) || 0);
     updateMinimumAffixLevel();
-    $("fill-gem-slots").checked = request.fillGemSlots !== false;
-    syncOptimizationMode(!!(request.statFirst || request.goodGear));
-    $("good-gear-min-gain").value = String(Number(request.goodGearMinimumGain) || 0);
-    $("good-gear-candidates").value = String(Number(request.goodGearCandidateLimit) || 20);
+    $("match-target-strictly").checked = request.matchTargetStrictly === true || (request.matchTargetStrictly === undefined && request.fillGemSlots === false);
+    syncOptimizationMode(!!request.statFirst);
     $("stat-first-reference-cost").value = String(Math.max(0, Number(request.statFirstReferenceCost ?? request.statFirstCostCeiling) || 0));
     for (const accessory of ["ring", "amulet"]) {
       const value = request[accessory] || "Any";
@@ -1705,10 +1711,8 @@
       affixes,
       minimumAffixLevel: Number($("minimum-affix-level").value),
       statFirst: optimizationMode.getAttribute("aria-checked") === "true",
-      goodGearMinimumGain: Number($("good-gear-min-gain").value),
-      goodGearCandidateLimit: Number($("good-gear-candidates").value),
       statFirstReferenceCost: Number($("stat-first-reference-cost").value),
-      fillGemSlots: $("fill-gem-slots").checked
+      matchTargetStrictly: $("match-target-strictly").checked
     };
   };
 
@@ -1859,7 +1863,7 @@
   const saveSession = () => saving = saving.then(() =>
     GUIService.SaveSession({ request: collectRequest(), result: lastResult || {}, hasResult: !!lastResult, help: document.body.classList.contains("help-mode") })
   ).catch(() => {});
-  document.querySelectorAll("[id^='good-gear'], #stat-first-reference-cost").forEach(input => input.oninput = () => {
+  document.querySelectorAll("[id^='stat-first'], #stat-first-reference-cost").forEach(input => input.oninput = () => {
     invalidateResult();
     updateCombined();
     saveSession();
@@ -1961,7 +1965,7 @@
     const footer = document.createElement("div");
     footer.className = "rules-footer";
     const run = rules.filter(rule => rule.startsWith("Optimization mode:") || rule.startsWith("Wine reference:"));
-    const soft = rules.filter(rule => rule.startsWith("Optimization:") || rule.startsWith("Fill Gem Slots: globally") || rule.startsWith("Fill Gem Slots fallback:") || rule.startsWith("Fallback:"));
+    const soft = rules.filter(rule => rule.startsWith("Optimization:") || rule.startsWith("Match Target Strictly:") || rule.startsWith("Fallback:"));
     const hard = rules.filter(rule => !run.includes(rule) && !soft.includes(rule));
     const section = (title, entries, tag = "h4") => {
       if (!entries.length) return;
@@ -1987,6 +1991,44 @@
     output.append(footer);
   }
 
+  function appendDebugCandidates(output, debug) {
+    if (!debug?.candidates?.length) return;
+    const details = document.createElement("details");
+    details.className = "debug-candidates";
+    details.open = true;
+    const summary = document.createElement("summary");
+    summary.textContent = `${debug.candidates.length} Stat First candidates tested (up to 20; reference-cost filtered)`;
+    details.append(summary);
+    const table = document.createElement("table");
+    const head = document.createElement("tr");
+    ["#", "Affixes", "Status", "Price", "Estimated score", "Validated score", "Attack equivalent"].forEach(label => {
+      const cell = document.createElement("th");
+      cell.textContent = label;
+      head.append(cell);
+    });
+    const thead = document.createElement("thead");
+    thead.append(head);
+    table.append(thead);
+    const body = document.createElement("tbody");
+    for (const candidate of debug.candidates) {
+      const row = document.createElement("tr");
+      if (candidate.selected) row.className = "selected";
+      const status = candidate.selected ? "SELECTED" : candidate.frontier ? "FRONTIER" : candidate.ranked ? "RANKED" : candidate.status || "invalid";
+      const affixes = candidate.affixes?.filter(affix => !affix.blocked).map(affix => `${affix.name} ${affix.level}`).join(", ") || "none";
+      const validated = candidate.status === "valid" || candidate.status === "OVER BUDGET";
+      const value = validated ? Number(candidate.stats?.[1] || 0) + Number(candidate.damage || 0) + Number(candidate.defensePenetration || 0) * 1.5 : Number(candidate.estimatedStats?.[1] || 0) + Number(candidate.estimatedDamage || 0) + Number(candidate.estimatedDefensePenetration || 0) * 1.5;
+      [candidate.number, affixes, status, candidate.price ? Number(candidate.price).toFixed(2) : "—", candidate.estimatedScore == null ? "—" : `~${Number(candidate.estimatedScore).toFixed(4)}`, candidate.score == null ? "—" : Number(candidate.score).toFixed(4), `${validated ? "" : "~"}${value.toFixed(2)}`].forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = String(value);
+        row.append(cell);
+      });
+      body.append(row);
+    }
+    table.append(body);
+    details.append(table);
+    output.append(details);
+  }
+
   function appendRunInfo(output, result) {
     const details = document.createElement("details");
     details.className = "run-info";
@@ -1998,6 +2040,7 @@
     search.className = "search-footer";
     search.textContent = `Search: ${Number(result.tested || 0).toLocaleString()} combinations · ${Number(result.seconds || 0).toFixed(2)}s`;
     content.append(search);
+    appendDebugCandidates(content, result.debug);
     appendOptimizationMilestones(content);
     appendRules(content, result.rules);
     details.append(summary, content);
