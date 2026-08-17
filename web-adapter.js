@@ -25,7 +25,7 @@
   };
 
   const primaryWorker = createWorker();
-  const workerCount = Math.min(4, Math.max(1, navigator.hardwareConcurrency || 2));
+  const workerCount = Math.min(2, Math.max(1, navigator.hardwareConcurrency || 2));
   while (workers.length < workerCount) createWorker();
 
   const loadJSON = key => JSON.parse(localStorage.getItem(key) || "null");
