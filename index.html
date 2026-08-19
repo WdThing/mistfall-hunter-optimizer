@@ -505,7 +505,7 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-08-19T02:29:21Z</small>
+      <small>Build 2026-08-19T02:44:54Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
         <button id="help-toggle" class="outline secondary" type="button" aria-expanded="true">Help</button>
         <details class="header-menu">
@@ -577,7 +577,7 @@
     <section class="controls">
     <label data-help="Limits equipment to the selected character class.">Class<select id="class"></select></label>
     <label data-help="Selects the weapon type, if you want to consider both weapons, change the weapon type and execute again.">Weapon<select id="weapon-class"></select></label>
-    <label class="rarity-range" data-help="Sets the minimum and maximum rarity for all equipment. The value in parenthesis is the total number of affix levels if the entire equipment has that rarity">Rarity
+    <label class="rarity-range" data-help="Sets the minimum and maximum rarity for all equipment. The value in parenthesis is the number of affix slots of each item slot in that rarity. An entire set has 8 item slots.">Rarity
       <span>
         <span class="rarity-select" data-rarity-select><select id="min-rarity" aria-label="Rarity from"></select></span>
         to
@@ -833,10 +833,22 @@
     updateRarityMarkers();
   };
   const fixedRaritySlots = ["helmet", "clothes", "gauntlets", "pants", "boots", "necklace", "ring"];
-  const maxEquipmentAffixLevels = () => ["weapon", ...fixedRaritySlots].reduce((total, slot) => {
-    const selected = $(slot === "weapon" ? "weapon-rarity" : `fixed-${slot}`).value;
-    return total + (rarityAffixSlots[selected] ?? rarityAffixSlots[$("max-rarity").value] ?? 0);
-  }, 0);
+  const maxRarityForFixed = () => {
+    const maximum = $("max-rarity").value;
+    const maximumIndex = options.rarities.indexOf(maximum);
+    const selected = ["weapon", ...fixedRaritySlots]
+      .map(slot => $(slot === "weapon" ? "weapon-rarity" : `fixed-${slot}`).value)
+      .filter(rarity => rarity && rarity !== "Any");
+    const lowestIndex = selected.reduce((lowest, rarity) => Math.min(lowest, options.rarities.indexOf(rarity)), maximumIndex);
+    return options.rarities[Math.min(maximumIndex, lowestIndex + 1)] || maximum;
+  };
+  const maxEquipmentAffixLevels = () => {
+    const maximum = maxRarityForFixed();
+    return ["weapon", ...fixedRaritySlots].reduce((total, slot) => {
+      const selected = $(slot === "weapon" ? "weapon-rarity" : `fixed-${slot}`).value;
+      return total + (rarityAffixSlots[selected] ?? rarityAffixSlots[maximum] ?? 0);
+    }, 0);
+  };
   const updateFixedRarities = selected => {
     const from = options.rarities.indexOf($("min-rarity").value);
     const to = options.rarities.indexOf($("max-rarity").value);
