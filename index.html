@@ -261,6 +261,11 @@
     .fixed-rarities { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
     .fixed-rarities label { min-width: 0; font-size: .82rem; font-weight: 650; }
     .fixed-rarities select { margin-top: 5px; }
+    .fixed-rarity-actions { margin-bottom: 14px; }
+    .fixed-rarity-caption { display: block; margin-bottom: 5px; font-size: .82rem; font-weight: 650; }
+    .fixed-rarity-control { display: flex; align-items: flex-start; gap: 8px; }
+    .fixed-rarity-control .rarity-select, .fixed-rarity-control select { width: 200px; }
+    .fixed-rarity-control button { width: auto; height: 46px; margin: 0; white-space: nowrap; }
     select, input, button { border-radius: 7px; }
     button { font-weight: 700; transition: transform .15s ease, box-shadow .15s ease; }
     button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 5px 14px #0003; }
@@ -438,13 +443,13 @@
     .summary-result-actions { display: flex; gap: 6px; margin-top: 8px; }
     .summary-result-actions[hidden] { display: none; }
     .summary-result-actions button { flex: 1; padding: 7px 6px; font-size: .74rem; }
-    .affix-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-bottom: 14px; }
-    .affix-search { flex: 1 1 220px; min-width: 180px; }
+    .affix-tools { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+    .affix-search { flex: 0 0 66%; min-width: 0; }
     .affix-tools label { font-size: .78rem; }
     .affix-tools input[type="search"] { width: 100%; margin-top: 5px; }
-    .minimum-affix-level { flex: 0 0 180px; }
-    .minimum-affix-level span { display: flex; align-items: center; gap: 6px; }
-    .minimum-affix-level input { width: 64px; }
+    .minimum-affix-level { display: flex; flex: 1 1 0; min-width: 0; align-items: baseline; gap: 6px; white-space: nowrap; }
+    .minimum-affix-level span { display: inline; }
+    .minimum-affix-level output { min-width: 16px; text-align: center; }
     .category-filters { display: flex; gap: 5px; }
     .category-filters button { padding: 7px 10px; font-size: .76rem; }
     .category-filters button.active { background: #8b6cff; border-color: #a895ff; }
@@ -500,7 +505,7 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-08-17T18:09:08Z</small>
+      <small>Build 2026-08-19T02:29:21Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
         <button id="help-toggle" class="outline secondary" type="button" aria-expanded="true">Help</button>
         <details class="header-menu">
@@ -603,6 +608,10 @@
         </div>
         <section id="advanced-panel-slot-rarity" class="advanced-panel" role="tabpanel" aria-labelledby="advanced-tab-slot-rarity">
           <p>Fix exact rarities for individual items. Leave a slot at Any to let the optimizer choose.</p>
+          <div class="fixed-rarity-actions">
+            <span class="fixed-rarity-caption">Set rarity for all pieces:</span>
+            <div class="fixed-rarity-control"><span class="rarity-select" data-rarity-select><select id="all-rarities" aria-label="Rarity for all pieces"></select></span><button id="set-all-rarities" class="outline secondary" type="button">Set</button></div>
+          </div>
           <div class="fixed-rarities">
             <label>Weapon Rarity<span class="rarity-select" data-rarity-select><select id="weapon-rarity"></select></span></label>
             <label>Helmet Rarity<span class="rarity-select" data-rarity-select><select id="fixed-helmet"></select></span></label>
@@ -649,8 +658,8 @@
       <button id="reset-affixes" class="outline secondary" type="button">Reset</button>
     </header>
   <div class="affix-tools">
-    <label class="affix-search" for="affix-search">Search affixes<input id="affix-search" type="search" placeholder="Search affixes..." autocomplete="off"></label>
-    <label class="minimum-affix-level" for="minimum-affix-level">Minimum total level<span><input id="minimum-affix-level" type="number" min="0" max="32" value="0"> / <output id="minimum-affix-level-max">32</output></span></label>
+    <div class="minimum-affix-level" aria-live="polite"><span>Current allocation:</span><span><output id="current-equipment-level">0</output> / <output id="equipment-level-max">32</output></span></div>
+    <input id="affix-search" type="search" placeholder="Search affixes..." autocomplete="off"></label>
   </div>
   <div class="help-note">Enter equipment and wine levels. The build summary stays visible while you edit. Wine has a maximum total of 8.</div>
   <div id="affix-notice" class="affix-notice" role="status" aria-live="polite"></div>
@@ -775,14 +784,12 @@
     helpToggle.setAttribute("aria-expanded", String(open));
     saveSession();
   };
-  const fullSetAffixSlots = { Gray: 0, White: 0, Green: 8, Blue: 16, Purple: 24, Gold: 32 };
-  const rarityLabel = rarity => fullSetAffixSlots[rarity] == null ? rarity : `${rarity} (${fullSetAffixSlots[rarity]})`;
-  const updateMinimumAffixLevel = () => {
-    const input = $("minimum-affix-level");
-    const maximum = fullSetAffixSlots[$("max-rarity").value] ?? 0;
-    input.max = String(maximum);
-    input.value = String(Math.min(maximum, Math.max(0, Number(input.value) || 0)));
-    $("minimum-affix-level-max").textContent = String(maximum);
+  const rarityAffixSlots = { Gray: 0, White: 0, Green: 1, Blue: 2, Purple: 3, Gold: 4 };
+  const rarityLabel = rarity => rarityAffixSlots[rarity] == null ? rarity : `${rarity} (${rarityAffixSlots[rarity]})`;
+  const updateEquipmentAllocation = equipmentTotal => {
+    const maximum = maxEquipmentAffixLevels();
+    $("current-equipment-level").textContent = String(equipmentTotal);
+    $("equipment-level-max").textContent = String(maximum);
   };
   const updateRarityMarkers = () => document.querySelectorAll("[data-rarity-select]").forEach(wrapper => {
     wrapper.dataset.rarity = wrapper.querySelector("select").value || "Any";
@@ -826,10 +833,19 @@
     updateRarityMarkers();
   };
   const fixedRaritySlots = ["helmet", "clothes", "gauntlets", "pants", "boots", "necklace", "ring"];
+  const maxEquipmentAffixLevels = () => ["weapon", ...fixedRaritySlots].reduce((total, slot) => {
+    const selected = $(slot === "weapon" ? "weapon-rarity" : `fixed-${slot}`).value;
+    return total + (rarityAffixSlots[selected] ?? rarityAffixSlots[$("max-rarity").value] ?? 0);
+  }, 0);
   const updateFixedRarities = selected => {
     const from = options.rarities.indexOf($("min-rarity").value);
     const to = options.rarities.indexOf($("max-rarity").value);
     const rarities = options.rarities.slice(from, to + 1);
+    const allRarities = $("all-rarities");
+    const allSelected = allRarities.value;
+    allRarities.replaceChildren();
+    addOptions(allRarities, ["Any", ...rarities], rarityLabel);
+    allRarities.value = rarities.includes(allSelected) ? allSelected : "Any";
     for (const slot of fixedRaritySlots) {
       const select = $(`fixed-${slot}`);
       const current = selected?.[slot] ?? select.value;
@@ -844,7 +860,6 @@
     if (options.rarities.indexOf($("min-rarity").value) > options.rarities.indexOf($("max-rarity").value)) $("max-rarity").value = $("min-rarity").value;
     updateWeaponRarities($("weapon-rarity").value);
     updateFixedRarities();
-    updateMinimumAffixLevel();
     updateCombined();
   };
   $("max-rarity").onchange = () => {
@@ -852,19 +867,24 @@
     if (options.rarities.indexOf($("max-rarity").value) < options.rarities.indexOf($("min-rarity").value)) $("min-rarity").value = $("max-rarity").value;
     updateWeaponRarities($("weapon-rarity").value);
     updateFixedRarities();
-    updateMinimumAffixLevel();
     updateCombined();
   };
   updateWeaponRarities();
   updateFixedRarities();
-  updateMinimumAffixLevel();
-  $("minimum-affix-level").oninput = () => {
+  $("set-all-rarities").onclick = () => {
+    const rarity = $("all-rarities").value;
+    $("weapon-rarity").value = rarity;
+    for (const slot of fixedRaritySlots) $(`fixed-${slot}`).value = rarity;
+    updateRarityMarkers();
     invalidateResult();
-    updateMinimumAffixLevel();
     updateCombined();
     saveSession();
   };
   document.querySelectorAll("[data-rarity-select] select").forEach(select => select.addEventListener("change", updateRarityMarkers));
+  for (const id of ["weapon-rarity", ...fixedRaritySlots.map(slot => `fixed-${slot}`)]) $(id).addEventListener("change", () => {
+    invalidateResult();
+    updateCombined();
+  });
 
   const advancedTabs = [...document.querySelectorAll("[data-advanced-tab]")];
   const setAdvancedTab = name => advancedTabs.forEach(tab => {
@@ -1551,8 +1571,6 @@
     const fixedRarities = request.fixedRarities || {};
     updateWeaponRarities(fixedRarities.weapon || request.weaponRarity);
     updateFixedRarities(fixedRarities);
-    $("minimum-affix-level").value = String(Number(request.minimumAffixLevel) || 0);
-    updateMinimumAffixLevel();
     $("match-target-strictly").checked = request.matchTargetStrictly === true || (request.matchTargetStrictly === undefined && request.fillGemSlots === false);
     syncOptimizationMode(!!request.statFirst);
     $("stat-first-reference-cost").value = String(Math.max(0, Number(request.statFirstReferenceCost ?? request.statFirstCostCeiling) || 0));
@@ -1653,20 +1671,21 @@
     const wineTotal = activeAffixes.reduce((total, affix) => total + affix.wine, 0);
     if (source) {
       const limit = source.dataset.kind === "equipment"
-        ? fullSetAffixSlots[$("max-rarity").value] ?? 0
+        ? maxEquipmentAffixLevels()
         : 8;
       const total = source.dataset.kind === "equipment" ? equipmentTotal : wineTotal;
       if (total > limit) {
         source.value = String(Math.max(0, Number(source.value) - total + limit));
         affixes = affixValues();
         showAffixNotice(source.dataset.kind === "equipment"
-          ? "Maximum number of affix levels for the selected maximum rarity reached.\n\nRecommendation: Increase maximum rarity or re-distribute affixes' levels"
+          ? "Maximum number of affix levels for the selected piece rarities reached.\n\nRecommendation: Increase piece rarities or re-distribute affixes' levels"
           : "Maximum number of victory wine levels reached.\n\nRecommendation: Re-distribute victory wine levels");
       }
     }
     const correctedActiveAffixes = affixes.filter(affix => !affix.blocked);
     const correctedEquipmentTotal = correctedActiveAffixes.reduce((total, affix) => total + affix.level, 0);
     const correctedWineTotal = correctedActiveAffixes.reduce((total, affix) => total + affix.wine, 0);
+    updateEquipmentAllocation(correctedEquipmentTotal);
     const {minimum: requiredRarity} = rarityRecommendation(correctedEquipmentTotal);
     const impossible = !requiredRarity || options.rarities.indexOf(requiredRarity) > options.rarities.indexOf($("max-rarity").value);
     const impossibleMessage = correctedEquipmentTotal > 32 ? "Impossible with highest rarity, reduce number of affixes" : "Impossible with maximum rarity, increase rarity or reduce number of equipment affixes";
@@ -1709,7 +1728,6 @@
       fixedRarities,
       statPriority: [...statPriorityList.children].map(row => row.dataset.stat),
       affixes,
-      minimumAffixLevel: Number($("minimum-affix-level").value),
       statFirst: optimizationMode.getAttribute("aria-checked") === "true",
       statFirstReferenceCost: Number($("stat-first-reference-cost").value),
       matchTargetStrictly: $("match-target-strictly").checked
@@ -1873,8 +1891,6 @@
     importedBuild = null;
     invalidateResult();
     document.querySelectorAll(".affix input").forEach(input => input.value = "0");
-    $("minimum-affix-level").value = "0";
-    updateMinimumAffixLevel();
     updateCombined();
     saveSession();
   };
@@ -2049,8 +2065,8 @@
 
   function invalidRecommendation(result) {
     const total = affixValues().filter(affix => !affix.blocked).reduce((sum, affix) => sum + affix.level, 0);
-    const capacity = fullSetAffixSlots[$("max-rarity").value] ?? 0;
-    if (total > capacity) return `Equipment requires ${total} affix levels, but ${$("max-rarity").value} supports ${capacity}. Increase maximum rarity or reduce a target.`;
+    const capacity = maxEquipmentAffixLevels();
+    if (total > capacity) return `Equipment requires ${total} affix levels, but the selected piece rarities support ${capacity}. Increase piece rarities or reduce a target.`;
     if (result.closest && result.distance) return `No exact build found. The closest result is short by ${result.distance} target level${result.distance === 1 ? "" : "s"}. Try reducing the largest target or increasing maximum rarity.`;
     return result.message || "No exact build found. Increase maximum rarity or reduce a target affix level.";
   }
