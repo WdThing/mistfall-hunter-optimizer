@@ -508,7 +508,7 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-08-22T02:45:37Z</small>
+      <small>Build 2026-08-22T22:15:18Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
         <button id="help-toggle" class="outline secondary" type="button" aria-expanded="true">Help</button>
         <details class="header-menu">
@@ -580,7 +580,8 @@
     <section class="controls">
     <label data-help="Limits equipment to the selected character class.">Class<select id="class"></select></label>
     <label data-help="Selects the weapon type, if you want to consider both weapons, change the weapon type and execute again.">Weapon<select id="weapon-class"></select></label>
-    <label class="rarity-range" data-help="Sets the minimum and maximum rarity for all equipment. The value in parenthesis is the number of affix slots of each item slot in that rarity. An entire set has 8 item slots.">Rarity
+    <label data-help="Adds a secondary weapon to the generated set.">Secondary Weapon<select id="secondary-weapon"></select></label>
+    <label class="rarity-range" data-help="Sets the minimum and maximum rarity for the optimized equipment. The value in parenthesis is the number of affix slots of each item slot in that rarity. The optimized set has 8 item slots; an optional secondary weapon is added separately.">Rarity
       <span>
         <span class="rarity-select" data-rarity-select><select id="min-rarity" aria-label="Rarity from"></select></span>
         to
@@ -804,11 +805,17 @@
 
   const options = await GUIService.GetOptions();
   addOptions($("class"), options.classes);
-  const updateWeapons = selected => {
+  const updateWeapons = (selected, secondarySelected) => {
     const weapons = options.weaponClasses[$("class").value] || [];
     $("weapon-class").replaceChildren();
     addOptions($("weapon-class"), weapons);
     $("weapon-class").value = weapons.includes(selected) ? selected : weapons[0] || "";
+    const secondaryOptions = weapons.length > 1 ? ["None", "White", "Match primary"] : ["None"];
+    const secondary = $("secondary-weapon");
+    secondary.replaceChildren();
+    addOptions(secondary, secondaryOptions, value => ({White: "White", "Match primary": "Match primary (rarity + affixes)"}[value] || value));
+    secondary.value = secondaryOptions.includes(secondarySelected) ? secondarySelected : weapons.length > 1 ? "White" : "None";
+    secondary.disabled = weapons.length <= 1;
   };
   $("class").onchange = () => {
     invalidateResult();
@@ -816,6 +823,11 @@
     updateCombined();
   };
   updateWeapons();
+  $("secondary-weapon").onchange = () => {
+    invalidateResult();
+    updateCombined();
+    saveSession();
+  };
   addOptions($("min-rarity"), options.rarities, rarityLabel);
   addOptions($("max-rarity"), options.rarities, rarityLabel);
   for (const accessory of ["ring", "amulet"]) {
@@ -1583,7 +1595,7 @@
     const [savedMinRarity, savedMaxRarity] = (ruleValue("Rarity: ") || "").split("–");
     if (savedClass) {
       $("class").value = savedClass;
-      updateWeapons(request.weaponClass || ruleValue("Weapon: "));
+      updateWeapons(request.weaponClass || ruleValue("Weapon: "), request.secondaryWeapon);
     }
     if (request.minRarity || savedMinRarity) $("min-rarity").value = options.rarities.includes(request.minRarity || savedMinRarity) ? request.minRarity || savedMinRarity : options.rarities[0];
     if (request.maxRarity || savedMaxRarity) $("max-rarity").value = options.rarities.includes(request.maxRarity || savedMaxRarity) ? request.maxRarity || savedMaxRarity : options.rarities.at(-1);
@@ -1739,6 +1751,7 @@
     return {
       characterClass: $("class").value,
       weaponClass: $("weapon-class").value,
+      secondaryWeapon: $("secondary-weapon").value,
       weaponRarity: $("weapon-rarity").value,
       minRarity: $("min-rarity").value,
       maxRarity: $("max-rarity").value,
