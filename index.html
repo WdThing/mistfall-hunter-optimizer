@@ -508,7 +508,7 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-09-01T15:14:06Z</small>
+      <small>Build 2026-09-01T21:57:31Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
         <button id="help-toggle" class="outline secondary" type="button" aria-expanded="true">Help</button>
         <details class="header-menu">
@@ -1094,6 +1094,7 @@
       "Magic Damage": { keys: ["magicalIncrease", "magicIncrease", "magicalDamage", "magicDamage"], scale: 100 }
     };
     for (const piece of result?.sets?.[0]?.pieces || []) {
+      if (piece.type === "Secondary") continue;
       for (const [name, { keys, scale }] of Object.entries(pieceAttributes)) {
         for (const key of keys) {
           const value = Number(piece.attributes?.[key]);
@@ -1122,9 +1123,10 @@
       return [name, statEffects[name].percentValue ? `${value}%` : value];
     }));
   };
-  const summaryAffixes = (result, applyConfiguredWine = false) => {
+  const summaryAffixes = (result, applyConfiguredWine = false, primaryOnly = false) => {
     if (!result?.sets?.[0]) return affixValues().filter(affix => !affix.blocked && affix.level + affix.wine > 0).map(affix => ({ ...affix, equipment: affix.level, level: affix.level + affix.wine }));
-    const affixes = new Map((result.sets[0].affixes || []).map(affix => [affix.name, { ...affix }]));
+    const source = primaryOnly ? result.sets[0].primaryAffixes || result.sets[0].affixes || [] : result.sets[0].affixes || [];
+    const affixes = new Map(source.map(affix => [affix.name, { ...affix }]));
     if (applyConfiguredWine) {
       const wineLevels = new Map(affixValues().map(affix => [affix.name, affix.blocked ? 0 : affix.wine]));
       for (const [name, wine] of wineLevels) {
@@ -1200,7 +1202,7 @@
     const result = build.session?.result;
     const set = result?.sets?.[0];
     const affixes = result ? summaryAffixes(result, true) : [];
-    const stats = result ? calculatedStats(affixes, result, build.session?.request?.characterClass) : {};
+    const stats = result ? calculatedStats(summaryAffixes(result, true, true), result, build.session?.request?.characterClass) : {};
     const rarities = [...new Set((set?.pieces || []).map(piece => piece.rarity).filter(Boolean))].sort((a, b) => a.localeCompare(b));
     return { result, set, affixes, stats, rarities };
   };
@@ -1382,7 +1384,7 @@
   };
   function updateBuildSummary(result = null) {
     const summaryResult = result || importedBuild;
-    const affixes = summaryAffixes(summaryResult);
+    const affixes = summaryAffixes(summaryResult, false, true);
     const stats = calculatedStats(affixes, summaryResult);
     for (const name of Object.keys(statEffects)) {
       $(`summary-${statEffects[name].id || name.toLowerCase()}`).textContent = stats[name];
