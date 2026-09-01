@@ -508,7 +508,7 @@
       <p class="subtitle">Find an affordable equipment and gem set for the effects you need.</p>
     </div>
     <div class="header-side">
-      <small>Build 2026-08-30T01:44:25Z</small>
+      <small>Build 2026-09-01T15:14:06Z</small>
       <div class="header-actions" role="group" aria-label="Workspace actions">
         <button id="help-toggle" class="outline secondary" type="button" aria-expanded="true">Help</button>
         <details class="header-menu">
@@ -649,6 +649,7 @@
                 <p class="stat-first-description">Stat First: (1) generates affix combinations at or below 110% of the Reference Cost using the price-by-total-level lookup, (2) finds real equipment for each, and (3) follows the stat-versus-average-price Pareto frontier. Lower-priced validated results remain eligible; only more expensive results are filtered when a cheaper result exists.</p>
                 <label for="stat-first-reference-cost"><span class="setting-label">Reference Cost <span class="setting-help" role="img" tabindex="0" aria-label="Reference Cost help">?<span class="affix-tooltip">The maximum-guidance average price used with the lookup table. Set 0 to disable price guidance. Stat First keeps lookup entries and validated equipment at or below 110% of this value; lower prices remain eligible.</span></span></span><input id="stat-first-reference-cost" type="number" min="0" step="1" value="0" placeholder="0 = no preference"></label>
               </div>
+              <label class="result-toggle"><input id="disable-item-rarity-difference" type="checkbox"><span class="setting-label">Disable Item Rarity Difference Constraint <span class="setting-help" role="img" tabindex="0" aria-label="Item rarity difference constraint help">?<span class="affix-tooltip">Allows the final equipment to use item rarities more than one tier apart in both Lowest Rarity and Stat First modes. This also removes the weapon-versus-armor rarity ordering constraint. Off by default.</span></span></span></label>
             </div>
           </div>
         </section>
@@ -854,6 +855,7 @@
   const fixedRaritySlots = ["helmet", "clothes", "gauntlets", "pants", "boots", "necklace", "ring"];
   const maxRarityForFixed = () => {
     const maximum = $("max-rarity").value;
+    if ($("disable-item-rarity-difference").checked) return maximum;
     const maximumIndex = options.rarities.indexOf(maximum);
     const selected = ["weapon", ...fixedRaritySlots]
       .map(slot => $(slot === "weapon" ? "weapon-rarity" : `fixed-${slot}`).value)
@@ -971,6 +973,10 @@
     saveSession();
   };
   syncOptimizationMode(false);
+  $("disable-item-rarity-difference").onchange = () => {
+    invalidateResult();
+    updateCombined();
+  };
 
   let lastResult = null;
   let importedBuild = null;
@@ -1604,6 +1610,7 @@
     updateFixedRarities(fixedRarities);
     $("match-target-strictly").checked = request.matchTargetStrictly === true || (request.matchTargetStrictly === undefined && request.fillGemSlots === false);
     syncOptimizationMode(!!request.statFirst);
+    $("disable-item-rarity-difference").checked = request.disableItemRarityDifferenceConstraint === true;
     $("stat-first-reference-cost").value = String(Math.max(0, Number(request.statFirstReferenceCost ?? request.statFirstCostCeiling) || 0));
     for (const accessory of ["ring", "amulet"]) {
       const value = request[accessory] || "Any";
@@ -1762,7 +1769,8 @@
       affixes,
       statFirst: optimizationMode.getAttribute("aria-checked") === "true",
       statFirstReferenceCost: Number($("stat-first-reference-cost").value),
-      matchTargetStrictly: $("match-target-strictly").checked
+      matchTargetStrictly: $("match-target-strictly").checked,
+      disableItemRarityDifferenceConstraint: $("disable-item-rarity-difference").checked
     };
   };
 
